@@ -1,0 +1,9 @@
+CFLAGS += -Wall
+CFLAGS += -O2
+
+LDFLAGS += -lglfw
+LDFLAGS += -lGL
+LDFLAGS += -lglut
+
+: foreach src/*.cpp |> g++ -c $(CFLAGS) %f -o %o |> %B.o
+: *.o |> g++ %f -o %o $(LDFLAGS) |> game
