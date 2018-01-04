@@ -174,10 +174,8 @@ int main() {
 			load_game_code(&code);
 		}
 
-		(*code.game_update_and_render)(&memory, 1.f);
-
-		glClear(GL_COLOR_BUFFER_BIT);
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+		(*code.game_update_and_render)(&memory, 1.f);
 	}
 }

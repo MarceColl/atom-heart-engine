@@ -2,3 +2,4 @@ libgamecode.so
 .tup
 build/
 glfw_game
+ah_pp

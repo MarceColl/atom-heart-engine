@@ -8,12 +8,8 @@
 
 typedef eid uint16_t;
 
-// An Entity is an object of the world.
-struct Entity {
-	World *world;
+// An Entity is an object of the world. It's a very cheap object to
+// move around as it's only an id.
+struct entity {
 	eid id;
-
-	bool hasComponent<T>() {
-		world->getComponentArray<T>(id);
-	}
 };

@@ -11,7 +11,6 @@ GLFW_CFLAGS += -Wextra
 GLFW_CFLAGS += -O2
 GLFW_CFLAGS += -fPIC
 GLFW_CFLAGS += -rdynamic
-GLFW_CFLAGS += -g
 
 GLFW_LDFLAGS += -lglfw
 GLFW_LDFLAGS += -lGL
@@ -25,10 +24,18 @@ GC_CFLAGS += -Wall
 GC_CFLAGS += -Wextra
 GC_CFLAGS += -O2
 GC_CFLAGS += -fPIC
-GC_CFLAGS += -g
 
 GC_LDFLAGS += -lGL
 GC_LDFLAGS += -lglut
 
 : foreach src/*.cpp |> g++ -c $(GC_CFLAGS) -I$(INCLUDE_PATH) %f -o %o |> build/%B.o
 : build/*.o |> g++ %f $(GC_CFLAGS) -shared -o lib/libgamecode.so $(GC_LDFLAGS) |> lib/libgamecode.so
+
+# Preprocessor
+PP_CFLAGS += -Wall
+PP_CFLAGS += -Wextra
+PP_CFLAGS += -O2
+PP_CFLAGS += -fPIC
+PP_CFLAGS += -fPIC
+
+: foreach preprocessor/*.cpp |> g++ $(PP_CFLAGS) %f -o ah_pp |> ah_pp

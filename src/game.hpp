@@ -3,26 +3,40 @@
 
 #include <inttypes.h>
 
+#define INTROSPECT(params)
+
 typedef char byte;
 
 #define Kilobytes(value) (((uint64_t)value)*1024)
 #define Megabytes(value) (Kilobytes((uint64_t)value)*1024)
 #define Gigabytes(value) (Megabytes((uint64_t)value)*1024)
 
-// NOTE(Marce): We don't want any allocations, we want to reserve all
-// the memory upfront and not have to reserve anything else. It's also
-// good because of the live reload, the memory will be preserved.
+// This struct holds the memory space we use all across the
+// engine. There are two memory spaces. *transient*, for working
+// memory, and *permanent*, for long-lasting memory.
+INTROSPECT(category:"tetesiko")
 struct game_memory {
+	// About: Allocation
+	//
+	// This engine has a strong no allocation
+	// policy. There must be no other allocation except the initial memory
+	// allocation for these two pointers.
+
 	uint64_t permanent_storage_space;
 	void *permanent_storage;
 
 	uint64_t transient_storage_space;
 	void *transient_storage;
 
-	bool isInitialized;
+	// Property: is_initialized
+	//
+	// Sometimes we want to know if the game_memory has been initialized.
+	bool is_initialized;
 };
 
-
+// Struct: game_state
+//
+// Holds game state
 struct game_state {
 	uint64_t counter;
 	uint64_t offset;
