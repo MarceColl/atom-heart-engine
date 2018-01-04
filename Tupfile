@@ -1,11 +1,27 @@
-CFLAGS += -Wall
-CFLAGS += -O2
+# Atom Heart Engine
+# Marce Coll - 2017
 
-LDFLAGS += -lglfw
-LDFLAGS += -lGL
-LDFLAGS += -lglut
-LDFLAGS += -ldl
+INCLUDE_PATH = ./src
+GAME_NAME = glfw_game
 
-: glfw_game.cpp |> g++ $(CFLAGS) %f -o glfw_game $(LDFLAGS) -I./src/ |> glfw_game
-: foreach src/*.cpp |> g++ -c $(CFLAGS) -I./src/ %f -o %o |> build/%B.o
-: build/*.o |> g++ %f -shared -o lib/libgamecode.so $(LDFLAGS) |> lib/libgamecode.so
+# Platform dependent code
+## GLFW GAME
+GLFW_CFLAGS += -Wall
+GLFW_CFLAGS += -O2
+
+GLFW_LDFLAGS += -lglfw
+GLFW_LDFLAGS += -lGL
+GLFW_LDFLAGS += -lglut
+GLFW_LDFLAGS += -ldl
+
+: glfw_game.cpp |> g++ $(GLFW_CFLAGS) %f -o $(GAME_NAME) $(GLFW_LDFLAGS) -I$(INCLUDE_PATH) |> $(GAME_NAME)
+
+# Game code library
+GC_CFLAGS += -Wall
+GC_CFLAGS += -O2
+
+GC_LDFLAGS += -lGL
+GC_LDFLAGS += -lglut
+
+: foreach src/*.cpp |> g++ -c $(GC_CFLAGS) -I$(INCLUDE_PATH) %f -o %o |> build/%B.o
+: build/*.o |> g++ %f $(GC_CFLAGS) -shared -o lib/libgamecode.so $(GC_LDFLAGS) |> lib/libgamecode.so
