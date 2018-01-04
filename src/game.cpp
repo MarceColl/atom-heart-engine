@@ -1,8 +1,6 @@
 #include <stdio.h>
 
 #include <game.hpp>
-#include <system.hpp>
-#include <render_system.hpp>
 
 
 extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
@@ -27,7 +25,4 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 		state->counter++;
 		state->offset++;
 	}
-
-	render_system rs = render_system();
-	rs.update();
 }

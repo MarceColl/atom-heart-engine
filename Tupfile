@@ -39,3 +39,6 @@ PP_CFLAGS += -fPIC
 PP_CFLAGS += -fPIC
 
 : foreach preprocessor/*.cpp |> g++ $(PP_CFLAGS) %f -o ah_pp |> ah_pp
+
+# Run Preprocessor
+: foreach src/*.hpp | ah_pp |> ./ah_pp %f > generated/AtomHeart/%b |> generated/AtomHeart/%b

@@ -3,3 +3,4 @@ libgamecode.so
 build/
 glfw_game
 ah_pp
+generated/*/*.hpp

@@ -1,8 +1,10 @@
+#include <string>
 #include <stdio.h>
 #include <stdlib.h>
 
+#define internal static
 
-char* ReadEntireFileIntoMemoryAndNullTerminate(char *filename) {
+char* read_file_to_mem_and_null_terminate(char *filename) {
 	char *result = 0;
 	FILE *file = fopen(filename, "r");
 	if(file) {
@@ -20,11 +22,25 @@ char* ReadEntireFileIntoMemoryAndNullTerminate(char *filename) {
 	return result;
 }
 
+typedef enum error_type {
+	ERROR_INTROSPECT_INVALID_TYPE,
+	ERROR_MISSING_OPAREN_AFTER_INTROSPECT,
+	ERROR_INVALID_STRUCT_MEMBER,
+	NUM_ERRORS
+} error_type;
+
+std::string error_strings[NUM_ERRORS] = {
+	[ERROR_INTROSPECT_INVALID_TYPE] =
+	"Introspection applied to invalid type. Valid types are: struct.",
+	[ERROR_MISSING_OPAREN_AFTER_INTROSPECT] =
+	"Missing '(' after INTROSPECT.",
+	[ERROR_INVALID_STRUCT_MEMBER] =
+	"Invalid struct member in introspectionable struct."
+};
+
 typedef enum token_type {
-	TOKEN_IDENTIFIER,
 	TOKEN_OPAREN,
 	TOKEN_CPAREN,
-	TOKEN_STRING,
 	TOKEN_SEMICOLON,
 	TOKEN_COLON,
 	TOKEN_ASTERISK,
@@ -33,6 +49,8 @@ typedef enum token_type {
 	TOKEN_OBRACE,
 	TOKEN_CBRACE,
 
+	TOKEN_STRING,
+	TOKEN_IDENTIFIER,
 	TOKEN_NUMERIC,
 
 	TOKEN_UNKNOWN,
@@ -46,9 +64,66 @@ struct token {
 	token_type type;
 };
 
+inline bool
+is_eol(char c) {
+	bool result = ((c == '\n') || 
+		       (c == '\r'));
+	return result;
+}
+
 struct tokenizer {
 	char *at;
+	int line;
+	int col;
+	char *line_start;
+
+	void next() {
+		++col;
+
+		if(is_eol(at[0])) {
+			++line;
+			col = 0;
+			line_start = at + 1;
+		}
+
+		++at;
+	}
+
+	void inc(int n) {
+		for(int i = 0; i < n; ++i) {
+			next();
+		}
+	}
 };
+
+internal void print_error_line(tokenizer *tkzr, token *tok) {
+	char *at = tkzr->line_start;
+	while((at[0] != '\n') && (at[0] != '\r')) {
+		++at;
+	}
+	int line_length = at - tkzr->line_start;
+	const int indent = 5;
+
+	int indicator_offset = tkzr->col + indent;
+	printf("\n%.*s%.*s\n", indent, "              ",
+	       line_length, tkzr->line_start);
+	if(tok != NULL) {
+		indicator_offset -= tok->length;
+		printf("%*c%.*s\n", indicator_offset, '^',
+		       tok->length, "~~~~~~~~~~~~~~~~~~~~~~~~");
+	}
+	else {
+		printf("%*c\n", indicator_offset, '^');
+	}
+}
+
+internal void report_error(tokenizer *tkzr, token *tok, error_type type) {
+	fprintf(stderr, "ERROR: %s (line %d col %d)\n",
+		error_strings[type].c_str(),
+		tkzr->line,
+		tkzr->col);
+	print_error_line(tkzr, tok);
+}
 
 inline bool
 is_whitespace(char c) {
@@ -59,28 +134,38 @@ is_whitespace(char c) {
 	return result;
 }
      
-static void
+internal void
 eat_all_whitespace(tokenizer *tkzr) {
 	for(;;) {
 		if(is_whitespace(tkzr->at[0])) {
-			++tkzr->at;
+			tkzr->next();
 		}
+		// Eat comments
 		else if((tkzr->at[0] == '/') &&
 			(tkzr->at[1] == '/')) {
-			tkzr->at += 2;
+			tkzr->inc(2);
 			while((tkzr->at[0] != '\n') &&
 			      (tkzr->at[0] != '\r') &&
 			      (tkzr->at[0])) {
-				++tkzr->at;
+				tkzr->next();
 			}
 		}
 		else if((tkzr->at[0] == '/') &&
 			(tkzr->at[1] == '*')) {
-			tkzr->at += 2;
+			tkzr->inc(2);
 			while(!((tkzr->at[0] == '*') &&
 				(tkzr->at[1] == '/')) &&
 			      (tkzr->at[0])) {
-				++tkzr->at;
+				tkzr->next();
+			}
+		}
+		// Eat preprocessor directives 
+		else if(tkzr->at[0] == '#') {
+			tkzr->next();
+			while((tkzr->at[0] != '\n') &&
+			      (tkzr->at[0] != '\r') &&
+			      (tkzr->at[0])) {
+				tkzr->next();
 			}
 		}
 		else {
@@ -89,18 +174,35 @@ eat_all_whitespace(tokenizer *tkzr) {
 	}
 }
 
-inline bool is_alpha(char c) {
+inline bool
+is_alpha(char c) {
 	bool result = (((c >= 'a') && (c <= 'z')) ||
 		       ((c >= 'A') && (c <= 'Z')));
 	return result;
 }
 
-inline bool is_numeric(char c) {
+inline bool
+is_numeric(char c) {
 	bool result = ((c >= '0') && (c <= '9'));
 	return result;
 }
 
-static token
+inline bool
+token_text_is(token tok, char *match) {
+	char *at = match;
+	for(int i = 0; i < tok.length; ++i, ++at) {
+		if((*at == 0) ||
+		   (tok.text[i] != *at)) {
+			return false;
+		}
+	}
+
+	bool result = (*at == 0);
+	return result;
+}
+
+
+internal token
 get_next_token(tokenizer *tkzr) {
 	eat_all_whitespace(tkzr);
 
@@ -109,31 +211,31 @@ get_next_token(tokenizer *tkzr) {
 	tok.text = tkzr->at;
 
 	switch(tkzr->at[0]) {
-	case '\0': {tok.type = TOKEN_EOF; ++tkzr->at; } break;
-	case '(': {tok.type = TOKEN_OPAREN; ++tkzr->at;} break;
-	case ')': {tok.type = TOKEN_CPAREN; ++tkzr->at;} break;
-	case ':': {tok.type = TOKEN_COLON; ++tkzr->at; } break;
-	case ';': {tok.type = TOKEN_SEMICOLON; ++tkzr->at; } break;
-	case '[': {tok.type = TOKEN_OBRACKET; ++tkzr->at; } break;
-	case ']': {tok.type = TOKEN_CBRACKET; ++tkzr->at; } break;
-	case '{': {tok.type = TOKEN_OBRACE; ++tkzr->at; } break;
-	case '}': {tok.type = TOKEN_CBRACE; ++tkzr->at; } break;
-	case '*': {tok.type = TOKEN_ASTERISK; ++tkzr->at; } break;
+	case '\0': {tok.type = TOKEN_EOF; tkzr->next(); } break;
+	case '(': {tok.type = TOKEN_OPAREN; tkzr->next();} break;
+	case ')': {tok.type = TOKEN_CPAREN; tkzr->next();} break;
+	case ':': {tok.type = TOKEN_COLON; tkzr->next(); } break;
+	case ';': {tok.type = TOKEN_SEMICOLON; tkzr->next(); } break;
+	case '[': {tok.type = TOKEN_OBRACKET; tkzr->next(); } break;
+	case ']': {tok.type = TOKEN_CBRACKET; tkzr->next(); } break;
+	case '{': {tok.type = TOKEN_OBRACE; tkzr->next(); } break;
+	case '}': {tok.type = TOKEN_CBRACE; tkzr->next(); } break;
+	case '*': {tok.type = TOKEN_ASTERISK; tkzr->next(); } break;
 	case '"': {
-		++tkzr->at;
+		tkzr->next();
 		tok.type = TOKEN_STRING;
 		tok.text = tkzr->at;
 		while(tkzr->at[0] &&
 		      tkzr->at[0] != '"') {
 			if((tkzr->at[0] == '\\') &&
 			   tkzr->at[1]) {
-				++tkzr->at;
+				tkzr->next();
 			}
-			++tkzr->at;
+			tkzr->next();
 		}
 		tok.length = tkzr->at - tok.text;
 		if(tkzr->at[0] == '"') {
-			++tkzr->at;
+			tkzr->next();
 		}
 	} break;
 	default:
@@ -141,27 +243,118 @@ get_next_token(tokenizer *tkzr) {
 		if(is_alpha(tkzr->at[0])) {
 			tok.type = TOKEN_IDENTIFIER;
 			tok.text = tkzr->at;
-			++tkzr->at;
+
 			while(is_alpha(tkzr->at[0]) ||
 			      is_numeric(tkzr->at[0]) ||
 			      tkzr->at[0] == '_') {
-				++tkzr->at;
+				tkzr->next();
 			}
+
 			tok.length = tkzr->at - tok.text;
-			--tkzr->at;
 		}
 		else if(is_numeric(tkzr->at[0])) {
-			tok.type = TOKEN_NUMERIC;
-			tok.text = tkzr->at;
+			// TODO
+			tkzr->next();
 		}
 		else {
 			tok.type = TOKEN_UNKNOWN;
+			tkzr->next();
 		}
-		++tkzr->at;
 	} break;
 	}
 
 	return tok;
+}
+
+internal bool
+require_token(tokenizer *tkzr, token_type type, token *tok_out) {
+	token tok = get_next_token(tkzr);
+	if(tok_out != NULL) {
+		*tok_out = tok;
+	}
+	return tok.type == type;
+}
+
+internal void 
+parse_member(tokenizer *tkzr, token member_type_tok) {
+	bool is_pointer = false;
+	bool parsing = true;
+
+	while(parsing) {
+		token tok = get_next_token(tkzr);
+
+		switch(tok.type) {
+		case TOKEN_ASTERISK:
+		{
+			is_pointer = true;
+		} break;
+		case TOKEN_IDENTIFIER:
+		{
+			printf("DEBUG_VALUE(%.*s);\n", tok.length, tok.text);
+		} break;
+		case TOKEN_SEMICOLON:
+		case TOKEN_EOF:
+		{
+			parsing = false;
+		} break;
+		default:
+		{
+			report_error(tkzr, &tok, ERROR_INVALID_STRUCT_MEMBER);
+		} break;
+		}
+	}
+}
+
+internal bool
+parse_struct(tokenizer *tkzr) {
+	token name_token = get_next_token(tkzr);
+	if(!require_token(tkzr, TOKEN_OBRACE, NULL)) {
+		fprintf(stderr,
+			"ERROR: struct definition missing from introspectable (line %d col %d)\n",
+			tkzr->line,
+			tkzr->col);
+		exit(1);
+	}
+	for(;;) {
+		token member_token = get_next_token(tkzr);
+		if(member_token.type == TOKEN_CBRACE) {
+			break;
+		}
+		else {
+			parse_member(tkzr, member_token);
+		}
+
+	}
+}
+
+internal void
+parse_introspection_params(tokenizer *tkzr) {
+	token tok;
+	// TODO
+
+	do {
+		tok = get_next_token(tkzr);
+	} while(tok.type != TOKEN_CPAREN);
+}
+
+internal void parse_introspectable(tokenizer *tkzr) {
+	token error_token;
+	if(require_token(tkzr, TOKEN_OPAREN, &error_token)) {
+		parse_introspection_params(tkzr);
+
+		token type_token = get_next_token(tkzr);
+		if(token_text_is(type_token, "struct")) {
+			parse_struct(tkzr);
+		}
+		else {
+			report_error(tkzr, &type_token, ERROR_INTROSPECT_INVALID_TYPE);
+			exit(1);
+		}
+	}
+	else {
+		report_error(tkzr, &error_token, ERROR_MISSING_OPAREN_AFTER_INTROSPECT);
+		exit(1);
+	}
 }
 
 int main(int argc, char **argv) {
@@ -170,11 +363,12 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
-	char* file_contents = ReadEntireFileIntoMemoryAndNullTerminate("src/game.hpp");
+	char* file_contents = read_file_to_mem_and_null_terminate(argv[1]);
 
-	tokenizer tkzr;
+	tokenizer tkzr = {};
+	tkzr.line = 1;
 	tkzr.at = file_contents;
-	printf("%s", file_contents);
+
 	bool parsing = true;
 	while(parsing) {
 		token tok = get_next_token(&tkzr);
@@ -182,6 +376,14 @@ int main(int argc, char **argv) {
 		default:
 		{
 			printf("%d: %.*s\n", tok.type, tok.length, tok.text);
+		} break;
+		case TOKEN_IDENTIFIER:
+		{
+			printf("%d: %.*s\n", tok.type, tok.length, tok.text);
+
+			if(token_text_is(tok, "INTROSPECT")) {
+				parse_introspectable(&tkzr);
+			}
 		} break;
 		case TOKEN_UNKNOWN:
 		{} break;
@@ -191,4 +393,6 @@ int main(int argc, char **argv) {
 		} break;
 		}
 	}
+
+	printf("num lines: %d\n", tkzr.line);
 }
