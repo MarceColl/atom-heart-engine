@@ -1,3 +1,4 @@
+libgamecode.so
 .tup
-*.o
-game
+build/
+glfw_game

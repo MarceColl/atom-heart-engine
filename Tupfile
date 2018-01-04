@@ -4,6 +4,8 @@ CFLAGS += -O2
 LDFLAGS += -lglfw
 LDFLAGS += -lGL
 LDFLAGS += -lglut
+LDFLAGS += -ldl
 
-: foreach src/*.cpp |> g++ -c $(CFLAGS) %f -o %o |> %B.o
-: *.o |> g++ %f -o %o $(LDFLAGS) |> game
+: glfw_game.cpp |> g++ $(CFLAGS) %f -o glfw_game $(LDFLAGS) -I./src/ |> glfw_game
+: foreach src/*.cpp |> g++ -c $(CFLAGS) -I./src/ %f -o %o |> build/%B.o
+: build/*.o |> g++ %f -shared -o lib/libgamecode.so $(LDFLAGS) |> lib/libgamecode.so
