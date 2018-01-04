@@ -14,11 +14,12 @@ $ ./glfw_game
 ## Dependencies
 * `glfw`
 * `inotify`
+* `glut`
 * `fuse` (for `tup`)
 
 If you're on archlinux
 ```shell
-$ sudo pacman -S glfw tup fuse-common fuse3
+$ sudo pacman -S glfw tup fuse-common fuse3 freeglut
 $ sudo reboot now
 ... wait and login ...
 $ sudo modprobe fuse
