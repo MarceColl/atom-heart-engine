@@ -2,6 +2,7 @@
 #include <dlfcn.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <inttypes.h>
 #include <GLFW/glfw3.h>
 #include <sys/inotify.h>
@@ -18,6 +19,7 @@ struct WindowProperties {
 
 void glfw_error_callback(int error, const char* description) {
 	puts(description);
+	printf("error code: %d\n", error);
 }
 
 
@@ -35,8 +37,8 @@ GLFWwindow* initialize_GLFW(WindowProperties winprop) {
 }
 
 struct game_code {
-	game_update_func *game_update;
-	game_render_func *game_render;
+	game_update_func *game_update_and_render;
+	initialize_game_state_func *initialize_game_state;
 };
 
 void load_game_code(game_code *code) {
@@ -55,13 +57,13 @@ void load_game_code(game_code *code) {
 
 	char *error;
 
-	code->game_update = (game_update_func*)dlsym(lib_handle, "game_update");
+	code->game_update_and_render = (game_update_func*)dlsym(lib_handle, "game_update_and_render");
 	if((error = dlerror()) != NULL) {
 		fprintf(stderr, "%s\n", error);
 		exit(1);
 	}
 
-	code->game_render = (game_render_func*)dlsym(lib_handle, "game_render");
+	code->initialize_game_state = (initialize_game_state_func*)dlsym(lib_handle, "initialize_game_state");
 	if((error = dlerror()) != NULL) {
 		fprintf(stderr, "%s\n", error);
 		exit(1);
@@ -101,7 +103,6 @@ int setup_library_modification_notification() {
 bool code_needs_reload(int fd) {
 	char buff[4096]
 		__attribute__ ((aligned(__alignof__(struct inotify_event))));
-	const struct inotify_event *event;
 	ssize_t len;
 
 	len = read(fd, buff, sizeof buff);
@@ -115,18 +116,35 @@ bool code_needs_reload(int fd) {
 
 
 void allocate_game_memory(game_memory *memory) {
+	// NOTE(Marce): We allocate all the memory we need at the
+	// start of the game, that way we can reload game code easily,
+	// we know we won't get an OUT OF MEM error in the middle of
+	// the game, we take into account data locality, we can manage
+	// our own memory properly and we avoid the cost of all
+	// allocations except this one.
 	memory->permanent_storage_space = Megabytes(64);
-	memory->transient_storage_space = Gigabytes(2);
+	memory->transient_storage_space = Megabytes(128);
 
 	uint64_t total_memory =
 		memory->permanent_storage_space +
 		memory->transient_storage_space;
 	
-	memory->permanent_storage = malloc(total_memory);
+	byte* mem_addr = (byte*)malloc(total_memory);
+	if(mem_addr == NULL) {
+		perror("Couldn't allocate memory for the game");
+		exit(1);
+	}
+
+	memory->permanent_storage = mem_addr;
+	memory->transient_storage = mem_addr + Megabytes(64);
+
+	// NOTE(Marce): We require memory to be initilized to 0 at the
+	// start.
+	memset(mem_addr, 0, total_memory);
 }
 
 
-int main(int argc, char** argv) {
+int main() {
 	WindowProperties winprop;
 	winprop.width = 640;
 	winprop.height = 400;
@@ -142,20 +160,21 @@ int main(int argc, char** argv) {
 	game_memory memory;
 	allocate_game_memory(&memory);
 
+	(*code.initialize_game_state)(&memory);
+	
 	while(!glfwWindowShouldClose(window)) {
 		// NOTE(Marce): inotify will tell us when the library
 		// has changed, and then we can reload the library.
 		// Because we keep the whole game memory as a
 		// structure, when the game reloads we will not lose
 		// the data. Only in certain cases, like when we
-		// change memory layouts, we will have to kill the
-		// game and restart it.
+		// change memory layouts, then we will have to kill
+		// the game and restart it.
 		if(code_needs_reload(fd)) {
 			load_game_code(&code);
 		}
 
-		(*code.game_update)(1.f);
-		(*code.game_render)();
+		(*code.game_update_and_render)(&memory, 1.f);
 
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwSwapBuffers(window);

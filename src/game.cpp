@@ -2,12 +2,30 @@
 
 #include <game.hpp>
 
-extern "C" GAME_UPDATE_FUNC(game_update) {
-	// TODO(Marce): Call all the systems update functions
-	printf("Testing zee super updates\n");
+
+extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
+	game_state *state;
+	state = (game_state*)memory->permanent_storage;
+
+	state->counter = 12;
+	state->offset = 14;
+
+	state->update_paused = false;
+
+	state->is_initialized = true;
 }
 
-extern "C" GAME_RENDER_FUNC(game_render) {
-	// TODO(Marce): Do the rendering
-	printf("Testing render\n");
+
+extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
+	// TODO(Marce): Call all the systems update functions
+	game_state *state;
+	state = (game_state*)memory->permanent_storage;
+
+	if(not state->update_paused) {
+		state->counter++;
+		state->offset++;
+	}
+		
+	printf("Counter: %lu\n", state->counter);
+	printf("offset: %lu\n", state->offset);
 }

@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 
+typedef char byte;
 
 #define Kilobytes(value) (((uint64_t)value)*1024)
 #define Megabytes(value) (Kilobytes((uint64_t)value)*1024)
@@ -21,11 +22,22 @@ struct game_memory {
 	bool isInitialized;
 };
 
+
+struct game_state {
+	uint64_t counter;
+	uint64_t offset;
+
+	bool is_initialized;
+	bool update_paused;
+};
+
+
 // NOTE(Marce): We define this macros to have consistency between the
 // typedefs and the function definitions in game.cpp
-#define GAME_UPDATE_FUNC(name) void(name)(float dt)
-typedef GAME_UPDATE_FUNC(game_update_func);
-#define GAME_RENDER_FUNC(name) void(name)(void)
-typedef GAME_RENDER_FUNC(game_render_func);
+#define GAME_UPDATE_AND_RENDER_FUNC(name) void(name)(game_memory *memory, float dt)
+typedef GAME_UPDATE_AND_RENDER_FUNC(game_update_func);
+
+#define INITIALIZE_GAME_STATE_FUNC(name) void(name)(game_memory *memory)
+typedef INITIALIZE_GAME_STATE_FUNC(initialize_game_state_func);
 
 #endif

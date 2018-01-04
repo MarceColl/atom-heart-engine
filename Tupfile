@@ -7,7 +7,11 @@ GAME_NAME = glfw_game
 # Platform dependent code
 ## GLFW GAME
 GLFW_CFLAGS += -Wall
+GLFW_CFLAGS += -Wextra
 GLFW_CFLAGS += -O2
+GLFW_CFLAGS += -fPIC
+GLFW_CFLAGS += -rdynamic
+GLFW_CFLAGS += -g
 
 GLFW_LDFLAGS += -lglfw
 GLFW_LDFLAGS += -lGL
@@ -18,7 +22,10 @@ GLFW_LDFLAGS += -ldl
 
 # Game code library
 GC_CFLAGS += -Wall
+GC_CFLAGS += -Wextra
 GC_CFLAGS += -O2
+GC_CFLAGS += -fPIC
+GC_CFLAGS += -g
 
 GC_LDFLAGS += -lGL
 GC_LDFLAGS += -lglut
