@@ -2,6 +2,7 @@
 #define _GAME__H_
 
 #include <inttypes.h>
+#include <GL/gl3w.h>
 
 // Introspection macro
 #define INTROSPECT(params)
@@ -12,10 +13,15 @@ typedef char byte;
 #define Megabytes(value) (Kilobytes((uint64_t)value)*1024)
 #define Gigabytes(value) (Megabytes((uint64_t)value)*1024)
 
+INTROSPECT()
+struct test_entity {
+	float x;
+	float y;
+};
+
 // This struct holds the memory space we use all across the
 // engine. There are two memory spaces. *transient*, for working
 // memory, and *permanent*, for long-lasting memory.
-INTROSPECT(category:"tetesiko")
 struct game_memory {
 	uint64_t permanent_storage_space;
 	void *permanent_storage;
@@ -32,6 +38,13 @@ struct game_state {
 
 	bool is_initialized;
 	bool update_paused;
+
+	GLuint vbo;
+	GLuint vao;
+
+	GLuint shader_program;
+
+	test_entity ent;
 };
 
 // NOTE(Marce): We define this macros to have consistency between the

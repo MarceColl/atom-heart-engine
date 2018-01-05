@@ -218,27 +218,13 @@ int main() {
 		}
 		ImGui_ImplSdlGL3_NewFrame(window);
 
-		{
-			static float f = 0.0f;
-			ImGui::Text("Hello, world!");
-			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
-			ImGui::ColorEdit3("clear color", (float*)&clear_color);
-			if (ImGui::Button("Demo Window"))
-				show_demo_window ^= 1;
-			if (ImGui::Button("Another Window"))
-				show_another_window ^= 1;
-			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
-				    1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-		}
-
 		(*code.game_update_and_render)(&memory, 1.f);
 
 		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
 		ImGui::ShowDemoWindow(&show_demo_window);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClearColor(0.0f, 1.f, 0.f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		(*code.game_update_and_render)(&memory, 1.f);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		ImGui::Begin("Game");

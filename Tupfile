@@ -5,20 +5,6 @@ INCLUDE_PATH += -I./src
 INCLUDE_PATH += -I./lib
 
 # Platform dependent code
-## GLFW GAME
-GLFW_CFLAGS += -Wall
-GLFW_CFLAGS += -Wextra
-GLFW_CFLAGS += -O2
-GLFW_CFLAGS += -fPIC
-GLFW_CFLAGS += -rdynamic
-
-GLFW_LDFLAGS += -lglfw
-GLFW_LDFLAGS += -lGL
-GLFW_LDFLAGS += -lglut
-GLFW_LDFLAGS += -ldl
-
-: glfw_game.cpp |> g++ $(GLFW_CFLAGS) %f -o %B $(GLFW_LDFLAGS) $(INCLUDE_PATH) |> %B
-
 ## SDL GAME
 SDL_CFLAGS += -Wall
 SDL_CFLAGS += -Wextra
