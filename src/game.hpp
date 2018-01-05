@@ -3,6 +3,7 @@
 
 #include <inttypes.h>
 
+// Introspection macro
 #define INTROSPECT(params)
 
 typedef char byte;
@@ -16,27 +17,15 @@ typedef char byte;
 // memory, and *permanent*, for long-lasting memory.
 INTROSPECT(category:"tetesiko")
 struct game_memory {
-	// About: Allocation
-	//
-	// This engine has a strong no allocation
-	// policy. There must be no other allocation except the initial memory
-	// allocation for these two pointers.
-
 	uint64_t permanent_storage_space;
 	void *permanent_storage;
 
 	uint64_t transient_storage_space;
 	void *transient_storage;
 
-	// Property: is_initialized
-	//
-	// Sometimes we want to know if the game_memory has been initialized.
 	bool is_initialized;
 };
 
-// Struct: game_state
-//
-// Holds game state
 struct game_state {
 	uint64_t counter;
 	uint64_t offset;
@@ -44,7 +33,6 @@ struct game_state {
 	bool is_initialized;
 	bool update_paused;
 };
-
 
 // NOTE(Marce): We define this macros to have consistency between the
 // typedefs and the function definitions in game.cpp

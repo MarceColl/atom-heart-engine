@@ -2,5 +2,7 @@ libgamecode.so
 .tup
 build/
 glfw_game
+sdl_game
 ah_pp
 generated/*/*.hpp
+*.o

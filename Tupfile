@@ -1,8 +1,8 @@
 # Atom Heart Engine
 # Marce Coll - 2017
 
-INCLUDE_PATH = ./src
-GAME_NAME = glfw_game
+INCLUDE_PATH += -I./src
+INCLUDE_PATH += -I./lib
 
 # Platform dependent code
 ## GLFW GAME
@@ -17,7 +17,23 @@ GLFW_LDFLAGS += -lGL
 GLFW_LDFLAGS += -lglut
 GLFW_LDFLAGS += -ldl
 
-: glfw_game.cpp |> g++ $(GLFW_CFLAGS) %f -o $(GAME_NAME) $(GLFW_LDFLAGS) -I$(INCLUDE_PATH) |> $(GAME_NAME)
+: glfw_game.cpp |> g++ $(GLFW_CFLAGS) %f -o %B $(GLFW_LDFLAGS) $(INCLUDE_PATH) |> %B
+
+## SDL GAME
+SDL_CFLAGS += -Wall
+SDL_CFLAGS += -Wextra
+SDL_CFLAGS += -O2
+SDL_CFLAGS += -fPIC
+SDL_CFLAGS += -rdynamic
+
+SDL_LDFLAGS += -lSDL2
+SDL_LDFLAGS += -lGL
+SDL_LDFLAGS += -lglut
+SDL_LDFLAGS += -ldl
+
+: foreach lib/imgui/*.cpp |> g++ -c $(SDL_CLFAGS) %f -o lib/build/%B.o $(SDL_LDSFLAGS) $(INCLUDE_PATH) |> lib/build/%B.o
+: foreach lib/GL/*.c |> g++ -c $(SDL_CLFAGS) %f -o lib/build/%B.o $(SDL_LDSFLAGS) $(INCLUDE_PATH) |> lib/build/%B.o
+: sdl_game.cpp | lib/build/*.o |> g++ $(SDL_CFLAGS) %f lib/build/*.o -o %B $(SDL_LDFLAGS) $(INCLUDE_PATH) |> %B
 
 # Game code library
 GC_CFLAGS += -Wall
@@ -28,14 +44,13 @@ GC_CFLAGS += -fPIC
 GC_LDFLAGS += -lGL
 GC_LDFLAGS += -lglut
 
-: foreach src/*.cpp |> g++ -c $(GC_CFLAGS) -I$(INCLUDE_PATH) %f -o %o |> build/%B.o
+: foreach src/*.cpp |> g++ -c $(GC_CFLAGS) $(INCLUDE_PATH) %f -o %o |> build/%B.o
 : build/*.o |> g++ %f $(GC_CFLAGS) -shared -o lib/libgamecode.so $(GC_LDFLAGS) |> lib/libgamecode.so
 
 # Preprocessor
 PP_CFLAGS += -Wall
 PP_CFLAGS += -Wextra
 PP_CFLAGS += -O2
-PP_CFLAGS += -fPIC
 PP_CFLAGS += -fPIC
 
 : foreach preprocessor/*.cpp |> g++ $(PP_CFLAGS) %f -o ah_pp |> ah_pp

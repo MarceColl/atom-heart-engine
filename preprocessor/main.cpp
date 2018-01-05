@@ -4,6 +4,9 @@
 
 #define internal static
 
+#define KNRM "\x1B[0m"
+#define KRED "\x1B[31m"
+
 char* read_file_to_mem_and_null_terminate(char *filename) {
 	char *result = 0;
 	FILE *file = fopen(filename, "r");
@@ -26,6 +29,7 @@ typedef enum error_type {
 	ERROR_INTROSPECT_INVALID_TYPE,
 	ERROR_MISSING_OPAREN_AFTER_INTROSPECT,
 	ERROR_INVALID_STRUCT_MEMBER,
+	ERROR_MISSING_STRUCT_DEFINITION,
 	NUM_ERRORS
 } error_type;
 
@@ -35,7 +39,9 @@ std::string error_strings[NUM_ERRORS] = {
 	[ERROR_MISSING_OPAREN_AFTER_INTROSPECT] =
 	"Missing '(' after INTROSPECT.",
 	[ERROR_INVALID_STRUCT_MEMBER] =
-	"Invalid struct member in introspectionable struct."
+	"Invalid struct member in introspectionable struct.",
+	[ERROR_MISSING_STRUCT_DEFINITION] =
+	"An introspectionable struct needs to be defined. Missing '{'."
 };
 
 typedef enum token_type {
@@ -76,6 +82,7 @@ struct tokenizer {
 	int line;
 	int col;
 	char *line_start;
+	char *filename;
 
 	void next() {
 		++col;
@@ -105,20 +112,23 @@ internal void print_error_line(tokenizer *tkzr, token *tok) {
 	const int indent = 5;
 
 	int indicator_offset = tkzr->col + indent;
-	printf("\n%.*s%.*s\n", indent, "              ",
-	       line_length, tkzr->line_start);
+	fprintf(stderr, "\n%.*s%.*s\n", indent, "              ",
+		line_length, tkzr->line_start);
 	if(tok != NULL) {
 		indicator_offset -= tok->length;
-		printf("%*c%.*s\n", indicator_offset, '^',
+		fprintf(stderr, "%*c%.*s\n", indicator_offset, '^',
 		       tok->length, "~~~~~~~~~~~~~~~~~~~~~~~~");
 	}
 	else {
-		printf("%*c\n", indicator_offset, '^');
+		fprintf(stderr, "%*c\n", indicator_offset, '^');
 	}
 }
 
 internal void report_error(tokenizer *tkzr, token *tok, error_type type) {
-	fprintf(stderr, "ERROR: %s (line %d col %d)\n",
+	fprintf(stderr, "%s ~ %sERROR%s: %s (line %d col %d)\n",
+		tkzr->filename,
+		KRED,
+		KNRM,
 		error_strings[type].c_str(),
 		tkzr->line,
 		tkzr->col);
@@ -290,7 +300,15 @@ parse_member(tokenizer *tkzr, token member_type_tok) {
 		} break;
 		case TOKEN_IDENTIFIER:
 		{
-			printf("DEBUG_VALUE(%.*s);\n", tok.length, tok.text);
+			printf("{metatype_%.*s,\"%.*s\",(uint32_t)&((%.*s *)0)->%.*s},\n",
+			       member_type_tok.length,
+			       member_type_tok.text,
+			       tok.length,
+			       tok.text,
+			       11,
+			       "game_memory",
+			       tok.length,
+			       tok.text);
 		} break;
 		case TOKEN_SEMICOLON:
 		case TOKEN_EOF:
@@ -308,11 +326,9 @@ parse_member(tokenizer *tkzr, token member_type_tok) {
 internal bool
 parse_struct(tokenizer *tkzr) {
 	token name_token = get_next_token(tkzr);
-	if(!require_token(tkzr, TOKEN_OBRACE, NULL)) {
-		fprintf(stderr,
-			"ERROR: struct definition missing from introspectable (line %d col %d)\n",
-			tkzr->line,
-			tkzr->col);
+	token error_token; 
+	if(!require_token(tkzr, TOKEN_OBRACE, &error_token)) {
+		report_error(tkzr, &error_token, ERROR_MISSING_STRUCT_DEFINITION);
 		exit(1);
 	}
 	for(;;) {
@@ -368,6 +384,7 @@ int main(int argc, char **argv) {
 	tokenizer tkzr = {};
 	tkzr.line = 1;
 	tkzr.at = file_contents;
+	tkzr.filename = argv[1];
 
 	bool parsing = true;
 	while(parsing) {

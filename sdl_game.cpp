@@ -1,13 +1,16 @@
+#include <SDL2/SDL.h>
 #include <string>
 #include <dlfcn.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <GL/gl3w.h>
 #include <inttypes.h>
-#include <GLFW/glfw3.h>
 #include <sys/inotify.h>
 
 #include <game.hpp>
+#include <imgui/imgui_sdl.h>
+#include <imgui/imgui.h>
 
 
 struct WindowProperties {
@@ -17,26 +20,34 @@ struct WindowProperties {
 };
 
 
-void glfw_error_callback(int error, const char* description) {
-	puts(description);
-	printf("error code: %d\n", error);
-}
-
-
-GLFWwindow* initialize_GLFW(WindowProperties winprop) {
-	if(!glfwInit()) {
-		return NULL;
+SDL_Window* initialize_SDL(WindowProperties winprop) {
+	if(SDL_Init(SDL_INIT_VIDEO|SDL_INIT_TIMER) != 0) {
+		fprintf(stderr,"SDL couldn't initialize (%s)\n", SDL_GetError());
+		exit(1);
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	
-	GLFWwindow *window = NULL; 
-	window = glfwCreateWindow(winprop.width,
-				  winprop.height,
-				  winprop.title.c_str(),
-				  NULL, NULL);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_DisplayMode current;
+	SDL_GetCurrentDisplayMode(0, &current);
+
+	SDL_Window *window;
+	window = SDL_CreateWindow("Atom Heart Engine",
+				  SDL_WINDOWPOS_CENTERED,
+				  SDL_WINDOWPOS_CENTERED,
+				  1280,
+				  720,
+				  SDL_WINDOW_OPENGL|SDL_WINDOW_RESIZABLE);
+	SDL_GLContext glcontext = SDL_GL_CreateContext(window);
+	gl3wInit();
+
+	ImGui_ImplSdlGL3_Init(window);
+
 	return window;
 }
 
@@ -148,14 +159,14 @@ void allocate_game_memory(game_memory *memory) {
 }
 
 
+
 int main() {
 	WindowProperties winprop;
 	winprop.width = 640;
 	winprop.height = 400;
 	winprop.title = "My Window";
 	
-	GLFWwindow *window = initialize_GLFW(winprop);
-	glfwMakeContextCurrent(window);
+	SDL_Window *window = initialize_SDL(winprop);
 
 	game_code code;
 	load_game_code(&code);
@@ -165,8 +176,29 @@ int main() {
 	allocate_game_memory(&memory);
 
 	(*code.initialize_game_state)(&memory);
+
+	GLuint fbo;
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	GLuint texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	
-	while(!glfwWindowShouldClose(window)) {
+	bool done = false;
+	bool show_demo_window = true;
+	bool show_another_window = false;
+	ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+	while(!done) {
 		// NOTE(Marce): inotify will tell us when the library
 		// has changed, and then we can reload the library.
 		// Because we keep the whole game memory as a
@@ -178,8 +210,54 @@ int main() {
 			load_game_code(&code);
 		}
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		SDL_Event event;
+		while(SDL_PollEvent(&event)) {
+			ImGui_ImplSdlGL3_ProcessEvent(&event);
+			if(event.type == SDL_QUIT)
+				done = true;
+		}
+		ImGui_ImplSdlGL3_NewFrame(window);
+
+		{
+			static float f = 0.0f;
+			ImGui::Text("Hello, world!");
+			ImGui::SliderFloat("float", &f, 0.0f, 1.0f);
+			ImGui::ColorEdit3("clear color", (float*)&clear_color);
+			if (ImGui::Button("Demo Window"))
+				show_demo_window ^= 1;
+			if (ImGui::Button("Another Window"))
+				show_another_window ^= 1;
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)",
+				    1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+		}
+
 		(*code.game_update_and_render)(&memory, 1.f);
+
+		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
+		ImGui::ShowDemoWindow(&show_demo_window);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glClearColor(0.0f, 1.f, 0.f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		ImGui::Begin("Game");
+		{
+			ImGui::GetWindowDrawList()->AddImage(
+				(void*)fbo,ImVec2(ImGui::GetCursorScreenPos()),
+				ImVec2(ImGui::GetCursorScreenPos().x + 800,
+				       ImGui::GetCursorScreenPos().y + 400),
+				ImVec2(0, 1),
+				ImVec2(1, 0));
+		}
+		ImGui::End();
+
+		glViewport(0, 0,
+			   (int)ImGui::GetIO().DisplaySize.x,
+			   (int)ImGui::GetIO().DisplaySize.y);
+		glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
+		glClear(GL_COLOR_BUFFER_BIT);
+		ImGui::Render();
+		SDL_GL_SwapWindow(window);
 	}
 }
