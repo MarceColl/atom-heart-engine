@@ -2,7 +2,7 @@
 
 #include <game.hpp>
 #include <imgui/imgui.h>
-#include <game_introspection.hpp>
+#include <game_generated.hpp>
 
 const char* vertex_shader =
 "#version 400\n"
@@ -76,7 +76,8 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 	  -0.5f+x, -0.5f+y, 0.0f
 	};
 
-	state->ent.x -= 0.0001f;
+	state->ent.x += 0.0001f;
+	state->ent.y += 0.0001f;
 
 	glBufferSubData(GL_ARRAY_BUFFER,
 			0,

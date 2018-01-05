@@ -4,6 +4,17 @@
 INCLUDE_PATH += -I./src
 INCLUDE_PATH += -I./lib
 
+# Preprocessor
+PP_CFLAGS += -Wall
+PP_CFLAGS += -Wextra
+PP_CFLAGS += -O2
+PP_CFLAGS += -fPIC
+
+: foreach preprocessor/*.cpp |> g++ $(PP_CFLAGS) %f -o ah_pp |> ah_pp
+
+# Run Preprocessor
+: src/*.hpp | ah_pp |> ./ah_pp %f > src/game_generated.hpp |> src/game_generated.hpp
+
 # Platform dependent code
 ## SDL GAME
 SDL_CFLAGS += -Wall
@@ -30,16 +41,6 @@ GC_CFLAGS += -fPIC
 GC_LDFLAGS += -lGL
 GC_LDFLAGS += -lglut
 
-: foreach src/*.cpp |> g++ -c $(GC_CFLAGS) $(INCLUDE_PATH) %f -o %o |> build/%B.o
+: foreach src/*.cpp | src/game_generated.hpp |> g++ -c $(GC_CFLAGS) $(INCLUDE_PATH) %f -o %o |> build/%B.o
 : build/*.o |> g++ %f $(GC_CFLAGS) -shared -o lib/libgamecode.so $(GC_LDFLAGS) |> lib/libgamecode.so
 
-# Preprocessor
-PP_CFLAGS += -Wall
-PP_CFLAGS += -Wextra
-PP_CFLAGS += -O2
-PP_CFLAGS += -fPIC
-
-: foreach preprocessor/*.cpp |> g++ $(PP_CFLAGS) %f -o ah_pp |> ah_pp
-
-# Run Preprocessor
-: foreach src/*.hpp | ah_pp |> ./ah_pp %f > generated/AtomHeart/%b |> generated/AtomHeart/%b

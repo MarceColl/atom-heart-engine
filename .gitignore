@@ -6,3 +6,4 @@ sdl_game
 ah_pp
 generated/*/*.hpp
 *.o
+imgui.ini

@@ -286,7 +286,7 @@ require_token(tokenizer *tkzr, token_type type, token *tok_out) {
 }
 
 internal void 
-parse_member(tokenizer *tkzr, token member_type_tok) {
+parse_member(tokenizer *tkzr, token member_type_tok, token struct_name_tok) {
 	bool is_pointer = false;
 	bool parsing = true;
 
@@ -300,15 +300,28 @@ parse_member(tokenizer *tkzr, token member_type_tok) {
 		} break;
 		case TOKEN_IDENTIFIER:
 		{
-			printf("{metatype_%.*s,\"%.*s\",(uint32_t)&((%.*s *)0)->%.*s},\n",
-			       member_type_tok.length,
-			       member_type_tok.text,
-			       tok.length,
-			       tok.text,
-			       11,
-			       "game_memory",
-			       tok.length,
-			       tok.text);
+			if(is_pointer) {
+			    printf("        {metatype_p%.*s,\"%.*s\",(uint64_t)&((%.*s *)0)->%.*s},\n",
+				member_type_tok.length,
+				member_type_tok.text,
+				tok.length,
+				tok.text,
+				struct_name_tok.length,
+				struct_name_tok.text,
+				tok.length,
+				tok.text);
+			}
+			else {
+			    printf("        {metatype_%.*s,\"%.*s\",(uint64_t)&((%.*s *)0)->%.*s},\n",
+				member_type_tok.length,
+				member_type_tok.text,
+				tok.length,
+				tok.text,
+				struct_name_tok.length,
+				struct_name_tok.text,
+				tok.length,
+				tok.text);
+			}
 		} break;
 		case TOKEN_SEMICOLON:
 		case TOKEN_EOF:
@@ -323,7 +336,7 @@ parse_member(tokenizer *tkzr, token member_type_tok) {
 	}
 }
 
-internal bool
+internal void
 parse_struct(tokenizer *tkzr) {
 	token name_token = get_next_token(tkzr);
 	token error_token; 
@@ -331,16 +344,20 @@ parse_struct(tokenizer *tkzr) {
 		report_error(tkzr, &error_token, ERROR_MISSING_STRUCT_DEFINITION);
 		exit(1);
 	}
+	printf("property_entry properties_of_%.*s[] = {\n",
+		name_token.length,
+		name_token.text);
 	for(;;) {
 		token member_token = get_next_token(tkzr);
 		if(member_token.type == TOKEN_CBRACE) {
 			break;
 		}
 		else {
-			parse_member(tkzr, member_token);
+			parse_member(tkzr, member_token, name_token);
 		}
 
 	}
+	printf("};\n\n\n");
 }
 
 internal void
@@ -374,42 +391,43 @@ internal void parse_introspectable(tokenizer *tkzr) {
 }
 
 int main(int argc, char **argv) {
-	if(argc != 2) {
-		fprintf(stderr, "usage: ah_pp FILE\n");
+	if(argc < 2) {
+		fprintf(stderr, "usage: ah_pp FILES\n");
 		exit(1);
 	}
 	
-	char* file_contents = read_file_to_mem_and_null_terminate(argv[1]);
+	printf("// Do not modify! File generated using the INTROSPECTION macro\n");
+	printf("#include <game_introspection.hpp>\n\n");
+	for(int i = 1; i < argc; ++i) {
+	    char* file_contents = read_file_to_mem_and_null_terminate(argv[i]);
 
-	tokenizer tkzr = {};
-	tkzr.line = 1;
-	tkzr.at = file_contents;
-	tkzr.filename = argv[1];
+	    tokenizer tkzr = {};
+	    tkzr.line = 1;
+	    tkzr.at = file_contents;
+	    tkzr.filename = argv[1];
 
-	bool parsing = true;
-	while(parsing) {
-		token tok = get_next_token(&tkzr);
-		switch(tok.type) {
-		default:
-		{
-			printf("%d: %.*s\n", tok.type, tok.length, tok.text);
-		} break;
-		case TOKEN_IDENTIFIER:
-		{
-			printf("%d: %.*s\n", tok.type, tok.length, tok.text);
+	    bool parsing = true;
+	    while(parsing) {
+		    token tok = get_next_token(&tkzr);
+		    switch(tok.type) {
+		    default:
+		    {
+		    } break;
+		    case TOKEN_IDENTIFIER:
+		    {
+			    if(token_text_is(tok, "INTROSPECT")) {
+				    parse_introspectable(&tkzr);
+			    }
+		    } break;
+		    case TOKEN_UNKNOWN:
+		    {} break;
+		    case TOKEN_EOF:
+		    {
+			    parsing = false;
+		    } break;
+		    }
+	    }
 
-			if(token_text_is(tok, "INTROSPECT")) {
-				parse_introspectable(&tkzr);
-			}
-		} break;
-		case TOKEN_UNKNOWN:
-		{} break;
-		case TOKEN_EOF:
-		{
-			parsing = false;
-		} break;
-		}
+	    free(file_contents);
 	}
-
-	printf("num lines: %d\n", tkzr.line);
 }
