@@ -219,7 +219,6 @@ int main() {
 		ImGui_ImplSdlGL3_NewFrame(window);
 
 		ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
-		ImGui::ShowDemoWindow(&show_demo_window);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		(*code.game_update_and_render)(&memory, 1.f);

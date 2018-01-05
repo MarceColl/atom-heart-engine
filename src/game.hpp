@@ -14,37 +14,54 @@ typedef char byte;
 #define Gigabytes(value) (Megabytes((uint64_t)value)*1024)
 
 INTROSPECT()
+struct test_struct {
+    float s;
+    float t;
+    float m;
+};
+
+INTROSPECT()
+struct test2_struct {
+    float a;
+    float b;
+    float c;
+};
+
+INTROSPECT()
 struct test_entity {
-	float x;
-	float y;
+    float x;
+    float y;
+    bool is_initialized;
+    test_struct t;
+    test2_struct a;
 };
 
 // This struct holds the memory space we use all across the
 // engine. There are two memory spaces. *transient*, for working
 // memory, and *permanent*, for long-lasting memory.
 struct game_memory {
-	uint64_t permanent_storage_space;
-	void *permanent_storage;
+    uint64_t permanent_storage_space;
+    void *permanent_storage;
 
-	uint64_t transient_storage_space;
-	void *transient_storage;
+    uint64_t transient_storage_space;
+    void *transient_storage;
 
-	bool is_initialized;
+    bool is_initialized;
 };
 
 struct game_state {
-	uint64_t counter;
-	uint64_t offset;
+    uint64_t counter;
+    uint64_t offset;
 
-	bool is_initialized;
-	bool update_paused;
+    bool is_initialized;
+    bool update_paused;
 
-	GLuint vbo;
-	GLuint vao;
+    GLuint vbo;
+    GLuint vao;
 
-	GLuint shader_program;
+    GLuint shader_program;
 
-	test_entity ent;
+    test_entity ent;
 };
 
 // NOTE(Marce): We define this macros to have consistency between the

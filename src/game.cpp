@@ -2,7 +2,8 @@
 
 #include <game.hpp>
 #include <imgui/imgui.h>
-#include <game_generated.hpp>
+#include <game_introspection.hpp>
+#include <debug.hpp>
 
 const char* vertex_shader =
 "#version 400\n"
@@ -31,7 +32,9 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
 
 	state->ent.x = -1;
 	state->ent.y = 0;
-	
+	state->ent.t.s = 12.1f;
+	state->ent.t.t = 2.3f;
+
 	float points[] = {
 	  0.0f, 0.5f, 0.0f,
 	  0.5f, -0.5f, 0.0f,
@@ -76,8 +79,9 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 	  -0.5f+x, -0.5f+y, 0.0f
 	};
 
-	state->ent.x += 0.0001f;
-	state->ent.y += 0.0001f;
+	state->ent.x -= 0.0001f;
+	state->ent.y -= 0.0001f;
+	state->ent.t.s += 0.1f;
 
 	glBufferSubData(GL_ARRAY_BUFFER,
 			0,
@@ -91,16 +95,8 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 	glBindVertexArray(state->vao);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
 
-	ImGui::Begin("test");
-	{
-		for(int i = 0; i < 2; ++i) {
-		    ImGui::Text("%s: %f",
-				properties_of_test_entity[i].name,
-				*((float*)(&state->ent + properties_of_test_entity[i].offset)));
-		}
-	}
-	ImGui::End();
-
+	DEBUG_inspect_struct(5, properties_of_test_entity, (void*)&state->ent, "state->ent");
+	DEBUG_inspect_struct(5, properties_of_test_entity, (void*)&state->ent, "state->ent2");
 
 	if(not state->update_paused) {
 		state->counter++;

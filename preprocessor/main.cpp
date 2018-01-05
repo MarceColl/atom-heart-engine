@@ -1,7 +1,7 @@
 #include <string>
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
-
 #define internal static
 
 #define KNRM "\x1B[0m"
@@ -301,7 +301,7 @@ parse_member(tokenizer *tkzr, token member_type_tok, token struct_name_tok) {
 		case TOKEN_IDENTIFIER:
 		{
 			if(is_pointer) {
-			    printf("        {metatype_p%.*s,\"%.*s\",(uint64_t)&((%.*s *)0)->%.*s},\n",
+			    printf("        {metatype_p%.*s,\"%.*s\",(uint64_t)&(((%.*s *)0)->%.*s)},\n",
 				member_type_tok.length,
 				member_type_tok.text,
 				tok.length,
@@ -312,7 +312,7 @@ parse_member(tokenizer *tkzr, token member_type_tok, token struct_name_tok) {
 				tok.text);
 			}
 			else {
-			    printf("        {metatype_%.*s,\"%.*s\",(uint64_t)&((%.*s *)0)->%.*s},\n",
+			    printf("        {metatype_%.*s,\"%.*s\",(uint64_t)&(((%.*s *)0)->%.*s)},\n",
 				member_type_tok.length,
 				member_type_tok.text,
 				tok.length,
@@ -336,6 +336,14 @@ parse_member(tokenizer *tkzr, token member_type_tok, token struct_name_tok) {
 	}
 }
 
+struct parsed_struct {
+  char *name;
+  parsed_struct *next;
+  uint8_t num_properties;
+};
+
+parsed_struct *first = NULL;
+
 internal void
 parse_struct(tokenizer *tkzr) {
 	token name_token = get_next_token(tkzr);
@@ -347,6 +355,8 @@ parse_struct(tokenizer *tkzr) {
 	printf("property_entry properties_of_%.*s[] = {\n",
 		name_token.length,
 		name_token.text);
+
+	uint8_t n_prop = 0;
 	for(;;) {
 		token member_token = get_next_token(tkzr);
 		if(member_token.type == TOKEN_CBRACE) {
@@ -354,10 +364,20 @@ parse_struct(tokenizer *tkzr) {
 		}
 		else {
 			parse_member(tkzr, member_token, name_token);
+			++n_prop;
 		}
 
 	}
 	printf("};\n\n\n");
+
+	parsed_struct *prev_first;
+	prev_first = first;
+	first = (parsed_struct*)malloc(sizeof(parsed_struct));
+	first->next = prev_first;
+	first->name = (char*)malloc(name_token.length + 1);
+	memcpy(first->name, name_token.text, name_token.length);
+	first->name[name_token.length] = 0;
+	first->num_properties = n_prop;
 }
 
 internal void
@@ -396,6 +416,8 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 	
+	printf("#ifndef _GAME_GENERATED__H_\n");
+	printf("#define _GAME_GENERATED__H_\n");
 	printf("// Do not modify! File generated using the INTROSPECTION macro\n");
 	printf("#include <game_introspection.hpp>\n\n");
 	for(int i = 1; i < argc; ++i) {
@@ -430,4 +452,29 @@ int main(int argc, char **argv) {
 
 	    free(file_contents);
 	}
+	printf("#endif\n");
+
+	printf("#define INTROSPECTION_SWITCH_TYPE_HELPER\\\n");
+	parsed_struct *structs;
+	structs = first;
+	while(structs != NULL) {
+	  printf("    case metatype_%s:\\\n"
+		 "    {\\\n"
+		 "        DEBUG_inspect_struct(%u, properties_of_%s, member_ptr, member->name);\\\n"
+		 "    } break; \\\n",
+		 structs->name,
+		 structs->num_properties,
+		 structs->name);
+	  structs = structs->next;
+	}
+	printf("\n");
+
+	printf("#define INTROSPECTION_ENUM_TYPE_HELPER\\\n");
+	structs = first;
+	while(structs != NULL) {
+	  printf("    metatype_%s,\\\n",
+		 structs->name);
+	  structs = structs->next;
+	}
+	printf("\n");
 }
