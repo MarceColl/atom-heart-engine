@@ -497,4 +497,15 @@ int main(int argc, char **argv) {
 	structs = structs->next;
     }
     printf("\n");
+
+    structs = first;
+    while(structs != NULL) {
+	printf("#define DEBUG_%s(entity)\\\n"
+	       "    DEBUG_inspect_struct(%d, properties_of_%s, entity, #entity)\\\n\n",
+	       structs->name,
+	       structs->num_properties,
+	       structs->name);
+	structs = structs->next;
+    }
+    printf("\n");
 }

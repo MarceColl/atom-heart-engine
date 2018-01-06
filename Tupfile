@@ -4,6 +4,8 @@
 INCLUDE_PATH += -I./src
 INCLUDE_PATH += -I./lib
 
+CFLAGS += -fdiagnostics-color=always
+
 # Preprocessor
 PP_CFLAGS += -Wall
 PP_CFLAGS += -Wextra
@@ -22,14 +24,15 @@ SDL_CFLAGS += -Wextra
 SDL_CFLAGS += -O2
 SDL_CFLAGS += -fPIC
 SDL_CFLAGS += -rdynamic
+SDL_CFLAGS += $(CFLAGS)
 
 SDL_LDFLAGS += -lSDL2
 SDL_LDFLAGS += -lGL
 SDL_LDFLAGS += -lglut
 SDL_LDFLAGS += -ldl
 
-: foreach lib/imgui/*.cpp |> g++ -c $(SDL_CLFAGS) %f -o lib/build/%B.o $(SDL_LDSFLAGS) $(INCLUDE_PATH) |> lib/build/%B.o
-: foreach lib/GL/*.c |> g++ -c $(SDL_CLFAGS) %f -o lib/build/%B.o $(SDL_LDSFLAGS) $(INCLUDE_PATH) |> lib/build/%B.o
+: foreach lib/imgui/*.cpp |> g++ -c $(SDL_CLFAGS) $(CFLAGS) %f -o lib/build/%B.o $(SDL_LDSFLAGS) $(INCLUDE_PATH) |> lib/build/%B.o
+: foreach lib/GL/*.c |> g++ -c $(SDL_CLFAGS) $(CFLAGS) %f -o lib/build/%B.o $(SDL_LDSFLAGS) $(INCLUDE_PATH) |> lib/build/%B.o
 : sdl_game.cpp | lib/build/*.o |> g++ $(SDL_CFLAGS) %f lib/build/*.o -o %B $(SDL_LDFLAGS) $(INCLUDE_PATH) |> %B
 
 # Game code library
@@ -41,6 +44,6 @@ GC_CFLAGS += -fPIC
 GC_LDFLAGS += -lGL
 GC_LDFLAGS += -lglut
 
-: foreach src/*.cpp | src/game_generated.hpp src/*.hpp |> g++ -c $(GC_CFLAGS) $(INCLUDE_PATH) %f -o %o |> build/%B.o
-: build/*.o |> g++ %f $(GC_CFLAGS) -shared -o lib/libgamecode.so $(GC_LDFLAGS) |> lib/libgamecode.so
+: foreach src/*.cpp | src/game_generated.hpp src/*.hpp |> g++ -c $(GC_CFLAGS) $(CFLAGS) $(INCLUDE_PATH) %f -o %o |> build/%B.o
+: build/*.o |> g++ %f $(GC_CFLAGS) $(CFLAGS) -shared -o lib/libgamecode.so $(GC_LDFLAGS) |> lib/libgamecode.so
 

@@ -81,7 +81,7 @@ inline void DEBUG_inspect_struct(uint32_t member_count,
 		    ImGui::Separator();
 		    for(int i = 0; i < 4; ++i) {
 			for(int j = 0; j < 4; ++j) {
-			    ImGui::Text("%f", (*mat)[i][j]); ImGui::NextColumn();
+			    ImGui::Text("%f", (*mat)[j][i]); ImGui::NextColumn();
 			}
 			ImGui::Separator();
 		    }

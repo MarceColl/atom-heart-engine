@@ -10,8 +10,8 @@
 
 #include <imgui/imgui_sdl.h>
 #include <imgui/imgui.h>
-
 #include <game.hpp>
+#include <game_platform.hpp>
 #include <memory.hpp>
 
 
@@ -21,6 +21,7 @@ struct WindowProperties {
     std::string title;
 };
 
+
 char* read_file_to_mem_and_null_terminate(char *filename) {
     char *result = 0;
     FILE *file = fopen(filename, "r");
@@ -29,7 +30,7 @@ char* read_file_to_mem_and_null_terminate(char *filename) {
 	size_t file_size = ftell(file);
 	fseek(file, 0, SEEK_SET);
 
-	// TODO: Remove malloc
+	// TODO(Marce): Remove malloc
 	result = (char*)malloc(file_size+1);
 	fread(result, file_size, 1, file);
 	result[file_size] = '\0';
@@ -38,6 +39,15 @@ char* read_file_to_mem_and_null_terminate(char *filename) {
     }
 
     return result;
+}
+
+u32 run_command(char *command) {
+    // NOTE(Marce): Maybe use fork/exec?
+    return system(command);
+}
+
+void write_to_log(char *why) {
+    
 }
 
 SDL_Window* initialize_SDL(WindowProperties winprop) {
@@ -195,6 +205,11 @@ int main() {
     game_memory memory;
     allocate_game_memory(&memory);
 
+    platform_code platform;
+    platform.run_command = &run_command;
+    platform.read_file = &read_file_to_mem_and_null_terminate;
+    platform.write_to_log = &write_to_log;
+
     GLuint fbo;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -212,7 +227,7 @@ int main() {
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-    (*code.initialize_game_state)(&memory);
+    (*code.initialize_game_state)(&platform, &memory);
 	
     bool done = false;
     bool show_demo_window = true;
