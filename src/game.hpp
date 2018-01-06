@@ -1,67 +1,60 @@
 #ifndef _GAME__H_
 #define _GAME__H_
 
+#include <memory.hpp>
 #include <inttypes.h>
 #include <GL/gl3w.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // Introspection macro
 #define INTROSPECT(params)
 
-typedef char byte;
 
 #define Kilobytes(value) (((uint64_t)value)*1024)
 #define Megabytes(value) (Kilobytes((uint64_t)value)*1024)
 #define Gigabytes(value) (Megabytes((uint64_t)value)*1024)
 
-INTROSPECT()
-struct test_struct {
-    float s;
-    float t;
-    float m;
+#define MAX_ENTITIES 65536
+
+typedef char byte;
+
+typedef u64 flags_t;
+typedef u16 eid;
+typedef u16 mat_id;
+
+INTROSPECT() struct material {
+    u32 shader_program;
+    char *vert_filename;
+    char *frag_filename;
 };
 
 INTROSPECT()
-struct test2_struct {
-    float a;
-    float b;
-    float c;
+struct entity {
+    eid id;
+    glm::vec3 position;
+    glm::mat4 orientation;
+    flags_t flags;
+    material mat;
 };
 
 INTROSPECT()
-struct test_entity {
-    float x;
-    float y;
-    bool is_initialized;
-    test_struct t;
-    test2_struct a;
-};
-
-// This struct holds the memory space we use all across the
-// engine. There are two memory spaces. *transient*, for working
-// memory, and *permanent*, for long-lasting memory.
-struct game_memory {
-    uint64_t permanent_storage_space;
-    void *permanent_storage;
-
-    uint64_t transient_storage_space;
-    void *transient_storage;
-
-    bool is_initialized;
+struct world_t {
+    entity entities[MAX_ENTITIES];
 };
 
 struct game_state {
-    uint64_t counter;
-    uint64_t offset;
-
+    world_t world;
+    memory_arena world_arena;
+    material materials;
+    
+    bool editor_mode;
     bool is_initialized;
     bool update_paused;
 
     GLuint vbo;
     GLuint vao;
-
-    GLuint shader_program;
-
-    test_entity ent;
 };
 
 // NOTE(Marce): We define this macros to have consistency between the

@@ -2,7 +2,6 @@
 #define _DEBUG__H_
 
 #include <imgui/imgui.h>
-#include <game_introspection.hpp>
 
 inline void DEBUG_inspect_struct(uint32_t member_count,
 				 property_entry *member_defs,
@@ -15,18 +14,53 @@ inline void DEBUG_inspect_struct(uint32_t member_count,
 		property_entry *member = member_defs + i;
 		void *member_ptr = (((uint8_t*)struct_ptr) + member->offset);
 
+		char label_input[100];
+		sprintf(label_input, "%s##%h", member->name, (uint8_t*)struct_ptr);
 		switch(member->type) {
 		case metatype_float:
-		    ImGui::Text("%s: %f", member->name, *(float*)member_ptr);
-		    break;
-
+		{
+		    ImGui::InputFloat(label_input, (float*)member_ptr, 0.001f, 1.0f);
+		} break;
 		case metatype_uint8_t:
+		{
+		    // ImGui::InputInt(label_input, (uint8_t*)member_ptr);
+		} break;
 		case metatype_uint16_t:
+		{
+		    //ImGui::InputInt(label_input, (uint16_t*)member_ptr);
+		} break;
 		case metatype_uint32_t:
 		{
-		    ImGui::Text("%s: %f", member->name, *(uint32_t*)member_ptr);
+		    // ImGui::InputInt(label_input, (uint32_t*)member_ptr);
 		} break;
-
+		case metatype_uint64_t:
+		{
+		    //ImGui::InputInt(label_input, (uint64_t*)member_ptr);
+		} break;
+		case metatype_int8_t:
+		{
+		    //ImGui::InputInt(label_input, (int8_t*)member_ptr);
+		} break;
+		case metatype_int16_t:
+		{
+		    //ImGui::InputInt(label_input, (int16_t*)member_ptr);
+		} break;
+		case metatype_int32_t:
+		{
+		    ImGui::InputInt(label_input, (int32_t*)member_ptr);
+		} break;
+		case metatype_int64_t:
+		{
+		    //ImGui::InputInt(label_input, (int64_t*)member_ptr);
+		} break;
+		case metatype_char:
+		{
+		    ImGui::Text("%s: %c", member->name, *(char*)member_ptr);
+		} break;
+		case metatype_pchar:
+		{
+		    ImGui::Text("%s: %s", member->name, *(char**)member_ptr);
+		} break;
 		case metatype_bool:
 		{
 		    ImGui::Text("%s: %s", member->name, (*(bool*)member_ptr) ? "true" : "false");

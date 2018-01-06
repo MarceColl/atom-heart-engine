@@ -3,56 +3,21 @@
 // Do not modify! File generated using the INTROSPECTION macro
 #include <game_introspection.hpp>
 
+property_entry properties_of_material[] = {
+        {metatype_u32,"shader_program",(uint64_t)&(((material *)0)->shader_program)},
+        {metatype_pchar,"vert_filename",(uint64_t)&(((material *)0)->vert_filename)},
+        {metatype_pchar,"frag_filename",(uint64_t)&(((material *)0)->frag_filename)},
+};
+
+
 property_entry properties_of_entity[] = {
         {metatype_eid,"id",(uint64_t)&(((entity *)0)->id)},
+        {metatype_glm__vec3,"position",(uint64_t)&(((entity *)0)->position)},
+        {metatype_glm__mat4,"orientation",(uint64_t)&(((entity *)0)->orientation)},
+        {metatype_flags_t,"flags",(uint64_t)&(((entity *)0)->flags)},
+        {metatype_material,"mat",(uint64_t)&(((entity *)0)->mat)},
 };
 
 
-property_entry properties_of_test_struct[] = {
-        {metatype_float,"s",(uint64_t)&(((test_struct *)0)->s)},
-        {metatype_float,"t",(uint64_t)&(((test_struct *)0)->t)},
-        {metatype_float,"m",(uint64_t)&(((test_struct *)0)->m)},
-};
-
-
-property_entry properties_of_test2_struct[] = {
-        {metatype_float,"a",(uint64_t)&(((test2_struct *)0)->a)},
-        {metatype_float,"b",(uint64_t)&(((test2_struct *)0)->b)},
-        {metatype_float,"c",(uint64_t)&(((test2_struct *)0)->c)},
-};
-
-
-property_entry properties_of_test_entity[] = {
-        {metatype_float,"x",(uint64_t)&(((test_entity *)0)->x)},
-        {metatype_float,"y",(uint64_t)&(((test_entity *)0)->y)},
-        {metatype_bool,"is_initialized",(uint64_t)&(((test_entity *)0)->is_initialized)},
-        {metatype_test_struct,"t",(uint64_t)&(((test_entity *)0)->t)},
-        {metatype_test2_struct,"a",(uint64_t)&(((test_entity *)0)->a)},
-};
-
-
-#endif
-#define INTROSPECTION_SWITCH_TYPE_HELPER\
-    case metatype_test_entity:\
-    {\
-        DEBUG_inspect_struct(5, properties_of_test_entity, member_ptr, member->name);\
-    } break; \
-    case metatype_test2_struct:\
-    {\
-        DEBUG_inspect_struct(3, properties_of_test2_struct, member_ptr, member->name);\
-    } break; \
-    case metatype_test_struct:\
-    {\
-        DEBUG_inspect_struct(3, properties_of_test_struct, member_ptr, member->name);\
-    } break; \
-    case metatype_entity:\
-    {\
-        DEBUG_inspect_struct(1, properties_of_entity, member_ptr, member->name);\
-    } break; \
-
-#define INTROSPECTION_ENUM_TYPE_HELPER\
-    metatype_test_entity,\
-    metatype_test2_struct,\
-    metatype_test_struct,\
-    metatype_entity,\
-
+property_entry properties_of_world_t[] = {
+        {metatype_entity,"entities",(uint64_t)&(((world_t *)0)->entities)},
