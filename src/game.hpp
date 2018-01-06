@@ -58,6 +58,8 @@ struct game_state {
     GLuint vbo;
     GLuint vao;
 
+    u32 texture;
+
     u32 shader_program;
 };
 

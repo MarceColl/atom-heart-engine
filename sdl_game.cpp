@@ -195,14 +195,13 @@ int main() {
     game_memory memory;
     allocate_game_memory(&memory);
 
-    (*code.initialize_game_state)(&memory);
-
     GLuint fbo;
     glGenFramebuffers(1, &fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 
     GLuint texture;
     glGenTextures(1, &texture);
+    printf("%u\n", texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 800, 600, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
@@ -211,14 +210,16 @@ int main() {
     glBindTexture(GL_TEXTURE_2D, 0);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
-
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    (*code.initialize_game_state)(&memory);
 	
     bool done = false;
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     while(!done) {
 	// NOTE(Marce): inotify will tell us when the library
 	// has changed, and then we can reload the library.
@@ -239,14 +240,14 @@ int main() {
 	}
 	ImGui_ImplSdlGL3_NewFrame(window);
 
+	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
 	ImGui::Begin("Game"); {
 	    ImVec2 window_size = ImGui::GetWindowSize();
 
 	    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-	    glViewport(0, 0,
-		       window_size.x,
-		       window_size.y);
+	    glClear(GL_COLOR_BUFFER_BIT);
+	    glViewport(0,0,800,600);
 	    (*code.game_update_and_render)(&memory, 1.f);
 	    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 	    ImGui::GetWindowDrawList()->AddImage(
@@ -258,11 +259,6 @@ int main() {
 	}
 	ImGui::End();
 
-	glViewport(0, 0,
-		   (int)ImGui::GetIO().DisplaySize.x,
-		   (int)ImGui::GetIO().DisplaySize.y);
-	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
-	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::Render();
 	SDL_GL_SwapWindow(window);
     }
