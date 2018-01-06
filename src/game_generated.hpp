@@ -17,6 +17,7 @@ property_entry properties_of_entity[] = {
         {metatype_glm__mat4,"transform",(uint64_t)&(((entity *)0)->transform)},
         {metatype_flags_t,"flags",(uint64_t)&(((entity *)0)->flags)},
         {metatype_material,"mat",(uint64_t)&(((entity *)0)->mat)},
+        {metatype_eid,"test_prop",(uint64_t)&(((entity *)0)->test_prop)},
 };
 
 
@@ -34,7 +35,7 @@ property_entry properties_of_world_t[] = {
     } break; \
     case metatype_entity:\
     {\
-        DEBUG_inspect_struct(6, properties_of_entity, member_ptr, member->name);\
+        DEBUG_inspect_struct(7, properties_of_entity, member_ptr, member->name);\
     } break; \
     case metatype_material:\
     {\

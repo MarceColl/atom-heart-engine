@@ -38,6 +38,7 @@ struct entity {
     glm::mat4 transform;
     flags_t flags;
     material mat;
+    eid test_prop;
 };
 
 INTROSPECT()

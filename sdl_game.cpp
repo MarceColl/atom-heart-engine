@@ -241,8 +241,8 @@ int main() {
 	ImGui_ImplSdlGL3_NewFrame(window);
 
 	glClear(GL_COLOR_BUFFER_BIT);
-	ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
-	ImGui::Begin("Game"); {
+	ImGui::SetNextWindowSize(ImVec2(815, 650));
+	ImGui::Begin("Game", NULL, ImGuiWindowFlags_NoResize); {
 	    ImVec2 window_size = ImGui::GetWindowSize();
 
 	    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
@@ -253,7 +253,7 @@ int main() {
 	    ImGui::GetWindowDrawList()->AddImage(
 		(void*)fbo,ImVec2(ImGui::GetCursorScreenPos()),
 		ImVec2(ImGui::GetCursorScreenPos().x + 800,
-		       ImGui::GetCursorScreenPos().y + 400),
+		       ImGui::GetCursorScreenPos().y + 600),
 		ImVec2(0, 1),
 		ImVec2(1, 0));
 	}

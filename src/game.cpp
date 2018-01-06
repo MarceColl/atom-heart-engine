@@ -149,7 +149,7 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 	world_t *world = &state->world;
 	entity *first_entity = &world->entities[0];
 
-	DEBUG_inspect_struct(6, properties_of_entity, first_entity, "entity");
+	DEBUG_inspect_struct(7, properties_of_entity, first_entity, "entity");
 
 	first_entity->transform = glm::rotate(first_entity->transform,
 					  glm::radians(5.0f),
