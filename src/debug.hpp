@@ -65,6 +65,44 @@ inline void DEBUG_inspect_struct(uint32_t member_count,
 		{
 		    ImGui::Text("%s: %s", member->name, (*(bool*)member_ptr) ? "true" : "false");
 		} break;
+		case metatype_eid:
+		{
+		    ImGui::Text("%s: %u", member->name, *(eid*)member_ptr);
+		} break;
+		case metatype_flags_t:
+		{
+		    ImGui::Text("%s: %u", member->name, *(flags_t*)member_ptr);
+		} break;
+		case metatype_glm__mat4:
+		{
+		    glm::mat4 *mat = (glm::mat4*)member_ptr;
+		    ImGui::Text("%s:", member->name);
+		    ImGui::Columns(4);
+		    ImGui::Separator();
+		    for(int i = 0; i < 4; ++i) {
+			for(int j = 0; j < 4; ++j) {
+			    ImGui::Text("%f", (*mat)[i][j]); ImGui::NextColumn();
+			}
+			ImGui::Separator();
+		    }
+		    ImGui::Columns(1);
+
+		} break;
+		case metatype_glm__vec2:
+		{
+		    glm::vec2 *mat = (glm::vec2*)member_ptr;
+		    ImGui::Text("%s:", member->name);
+		    ImGui::Columns(1);
+		    ImGui::Separator();
+		    ImGui::Text("x: %f", (*mat)[0]); ImGui::NextColumn();
+		    ImGui::Text("y: %f", (*mat)[1]); ImGui::NextColumn();
+		    ImGui::Separator();
+		    ImGui::Columns(1);
+		} break;
+		case metatype_mat_id:
+		{
+		    ImGui::Text("%s: %u", member->name, *(mat_id*)member_ptr);
+		} break;
 
 		INTROSPECTION_SWITCH_TYPE_HELPER
 

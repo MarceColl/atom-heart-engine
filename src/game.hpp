@@ -33,8 +33,9 @@ INTROSPECT() struct material {
 INTROSPECT()
 struct entity {
     eid id;
-    glm::vec3 position;
-    glm::mat4 orientation;
+    u16 priority;
+    glm::vec2 position;
+    glm::mat4 transform;
     flags_t flags;
     material mat;
 };
@@ -42,6 +43,7 @@ struct entity {
 INTROSPECT()
 struct world_t {
     entity entities[MAX_ENTITIES];
+    eid num_entities;
 };
 
 struct game_state {
@@ -55,6 +57,8 @@ struct game_state {
 
     GLuint vbo;
     GLuint vao;
+
+    u32 shader_program;
 };
 
 // NOTE(Marce): We define this macros to have consistency between the

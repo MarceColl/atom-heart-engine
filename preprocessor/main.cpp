@@ -338,6 +338,11 @@ parse_member(tokenizer *tkzr, token member_type_tok, token struct_name_tok) {
 		       tok.text);
 	    }
 	} break;
+	case TOKEN_OBRACKET:
+	{
+	    token NUM_ARRAY = get_next_token(tkzr);
+	    token LAST_BRACKET = get_next_token(tkzr);
+	} break;
 	case TOKEN_SEMICOLON:
 	case TOKEN_EOF:
 	{

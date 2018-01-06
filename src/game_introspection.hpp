@@ -35,10 +35,12 @@ enum meta_types {
     metatype_bool,
     // GLM
     metatype_glm__mat4,
+    metatype_glm__vec2,
     metatype_glm__quaterion,
     metatype_glm__vec3,
     // Custom types
     metatype_eid,
+    metatype_mat_id,
     metatype_flags_t,
     INTROSPECTION_ENUM_TYPE_HELPER
 };
