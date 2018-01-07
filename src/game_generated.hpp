@@ -17,7 +17,7 @@ property_entry properties_of_entity[] = {
         {metatype_glm__vec3,"position",(uint64_t)&(((entity *)0)->position)},
         {metatype_glm__mat4,"transform",(uint64_t)&(((entity *)0)->transform)},
         {metatype_flags_t,"flags",(uint64_t)&(((entity *)0)->flags)},
-        {metatype_material,"mat",(uint64_t)&(((entity *)0)->mat)},
+        {metatype_mat_id,"mat",(uint64_t)&(((entity *)0)->mat)},
 };
 
 

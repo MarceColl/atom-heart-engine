@@ -10,49 +10,66 @@
 #include <debug.hpp>
 #include <image_utils.hpp>
 
-const char* vertex_shader_source =
-    "#version 400\n"
-    "layout (location = 0) in vec3 aPos;"
-    "layout (location = 1) in vec2 aTexCoord;"
-    "uniform mat4 model;"
-    "uniform mat4 view;"
-    "uniform mat4 projection;"
-    "out vec2 TexCoord;"
-    "void main() {"
-    "  gl_Position = projection * view * model * vec4(aPos, 1.0f);"
-    "  TexCoord = aTexCoord;"
-    "}";
-
-const char* fragment_shader_source =
-    "#version 400\n"
-    "out vec4 frag_colour;"
-    "in vec2 TexCoord;"
-    "uniform sampler2D ourTexture;"
-    "void main() {"
-    "  frag_colour = texture(ourTexture, TexCoord);"
-    "}";
-
-
-u32 compile_
-
-mat_id create_material(u32 texture, char *vert_filename, char *frag_filename) {
-    char *vert_data = platform->read_file(vert_filename);
-    char *frag_data = platform->read_file(frag_filename);
-
+#define compile_shader(shader_data, shader_type) \
+    compile_shader_(state, shader_data, shader_type)
+u32 compile_shader_(game_state *state, char *shader_data, GLenum shader_type) {
+    u32 shader_id;
+    s32 success;
+    GLchar infoLog[1024];
     
-    u32 fragment_shader;
-    fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
-    glCompileShader(fragment_shader);
+    shader_id = glCreateShader(shader_type);
+    glShaderSource(shader_id, 1, &shader_data, NULL);
+    glCompileShader(shader_id);
 
-    glGetShaderiv(fragment_shader, GL_COMPILE_STATUS, &success);
+    glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
     if(!success) {
 	printf("yeah...\n");
-	glGetShaderInfoLog(vertex_shader, 1024, NULL, infoLog);
+	glGetShaderInfoLog(shader_id, 1024, NULL, infoLog);
 	printf("%s\n", infoLog);
     }
 
-    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
+    return shader_id;
+}
+
+#define assign_mat_id() assign_mat_id_(state)
+mat_id assign_mat_id_(game_state *state) {
+    mat_id new_id = state->num_materials;
+    state->num_materials++;
+    return new_id;
+}
+
+#define create_material(texture, vert_filename, frag_filename) \
+    create_material_(state, texture, vert_filename, frag_filename)
+mat_id create_material_(game_state *state, u32 texture, char *vert_filename, char *frag_filename) {
+    char *vert_data = state->platform->read_file(vert_filename);
+    u32 vertex_shader = compile_shader(vert_data, GL_VERTEX_SHADER);
+    free(vert_data);
+
+    char *frag_data = state->platform->read_file(frag_filename);
+    u32 fragment_shader = compile_shader(frag_data, GL_FRAGMENT_SHADER);
+    free(frag_data);
+
+    material mat;
+    mat.shader_program = glCreateProgram();
+    glAttachShader(mat.shader_program, vertex_shader);
+    glAttachShader(mat.shader_program, fragment_shader);
+    glLinkProgram(mat.shader_program);
+
+    glDeleteShader(vertex_shader);
+    glDeleteShader(fragment_shader);
+
+    mat_id new_id = assign_mat_id();
+
+    state->materials[new_id] = mat;
+    return new_id;
+}
+
+#define bind_material(mat) bind_material_(state, mat);
+void bind_material_(game_state *state, mat_id mat) {
+    material *m = &state->materials[mat];
+    
+    glBindTexture(GL_TEXTURE_2D, m->texture);
+    glUseProgram(m->shader_program);
 }
 
 
@@ -89,7 +106,13 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
 
     srand((unsigned) time(NULL));
 
+
+    mat_id test_mat = create_material(texture_2d,
+				      "./shaders/basic.vert",
+				      "./shaders/basic.frag");
+
     for(int i = 0; i < world->num_entities; ++i) {
+	world->entities[i].mat = test_mat;
 	world->entities[i].transform = glm::mat4(1);
 	world->entities[i].transform = glm::scale(world->entities[i].transform,
 						  glm::vec3(0.2f, 0.2f, 0.2f));
@@ -118,31 +141,6 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
 	1, 2, 3
     };
 
-    s32 success;
-    GLchar infoLog[1024];
-    u32 vertex_shader;
-    vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
-    glCompileShader(vertex_shader);
-
-    glGetShaderiv(vertex_shader, GL_COMPILE_STATUS, &success);
-    if(!success) {
-	printf("fuck...\n");
-	glGetShaderInfoLog(vertex_shader, 1024, NULL, infoLog);
-	printf("%s\n", infoLog);
-    }
-	
-
-    u32 shader_program;
-    shader_program = glCreateProgram();
-    glAttachShader(shader_program, vertex_shader);
-    glAttachShader(shader_program, fragment_shader);
-    glLinkProgram(shader_program);
-
-    glDeleteShader(vertex_shader);
-    glDeleteShader(fragment_shader);
-
-    state->shader_program = shader_program;
 
     u32 VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
@@ -171,8 +169,7 @@ s32 entity_priority_compare(const void* _e1, const void* _e2) {
     entity* e2 = (entity*)_e2;
 
     if(e1->priority == e2->priority) {
-	return e1->mat.shader_program < e2->mat.shader_program ?
-	    -1 : 1;
+	return e1->mat< e2->mat ? -1 : 1;
     }
     return e1->priority < e2->priority ? -1 : 1;
 }
@@ -247,16 +244,10 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
     u32 projectionLoc = glGetUniformLocation(state->shader_program, "projection");
     glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 
-    if(world->entities_dirty) {
-	// TODO(Marce): Look into this
-	// entity_sort(world->entities, world->num_entities);
-	world->entities_dirty = false;
-    }
-	
-    glBindTexture(GL_TEXTURE_2D, state->texture);
     glBindVertexArray(state->vao);
-    glUseProgram(state->shader_program);
     for(int i = 0; i < world->num_entities; i++) {
+	entity *e = &world->entities[i];
+	bind_material(e->mat);
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world->entities[i].transform));
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
