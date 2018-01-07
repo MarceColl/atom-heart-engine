@@ -23,35 +23,35 @@ inline void DEBUG_inspect_struct(uint32_t member_count,
 		} break;
 		case metatype_uint8_t:
 		{
-		    // ImGui::InputInt(label_input, (uint8_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (u32)*(uint8_t*)member_ptr);
 		} break;
 		case metatype_uint16_t:
 		{
-		    //ImGui::InputInt(label_input, (uint16_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (u32)*(uint16_t*)member_ptr);
 		} break;
 		case metatype_uint32_t:
 		{
-		    // ImGui::InputInt(label_input, (uint32_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (u32)*(uint32_t*)member_ptr);
 		} break;
 		case metatype_uint64_t:
 		{
-		    //ImGui::InputInt(label_input, (uint64_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (u32)*(uint64_t*)member_ptr);
 		} break;
 		case metatype_int8_t:
 		{
-		    //ImGui::InputInt(label_input, (int8_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (s32)*(int8_t*)member_ptr);
 		} break;
 		case metatype_int16_t:
 		{
-		    //ImGui::InputInt(label_input, (int16_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (s32)*(int16_t*)member_ptr);
 		} break;
 		case metatype_int32_t:
 		{
-		    ImGui::InputInt(label_input, (int32_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (int32_t*)member_ptr);
 		} break;
 		case metatype_int64_t:
 		{
-		    //ImGui::InputInt(label_input, (int64_t*)member_ptr);
+		    ImGui::Text("%s: d",label_input, (s32)*(int64_t*)member_ptr);
 		} break;
 		case metatype_char:
 		{
@@ -107,12 +107,12 @@ inline void DEBUG_inspect_struct(uint32_t member_count,
 		INTROSPECTION_SWITCH_TYPE_HELPER
 
 		default:
-		    break;
+		break;
 		}
 	    }
 	    ImGui::Unindent(15.0f);
 	}
-    ImGui::End();
+	ImGui::End();
     }
 }  
 
