@@ -30,11 +30,12 @@ enum meta_types {
     metatype_s32,
     metatype_s64,
     metatype_f32,
-    metatype_pframe,
 
     metatype_pchar, // string
     metatype_char,
     metatype_bool,
+
+    metatype_animation_dict,
     // GLM
     metatype_glm__mat4,
     metatype_glm__vec2,

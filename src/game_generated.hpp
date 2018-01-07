@@ -3,10 +3,6 @@
 // Do not modify! File generated using the INTROSPECTION macro
 #include <game_introspection.hpp>
 
-property_entry properties_of_texture[] = {
-};
-
-
 property_entry properties_of_material[] = {
         {metatype_pchar,"name",(uint64_t)&(((material *)0)->name)},
         {metatype_u32,"shader_program",(uint64_t)&(((material *)0)->shader_program)},
@@ -34,6 +30,7 @@ property_entry properties_of_animator_t[] = {
         {metatype_u16,"x_divisions",(uint64_t)&(((animator_t *)0)->x_divisions)},
         {metatype_u16,"y_divisions",(uint64_t)&(((animator_t *)0)->y_divisions)},
         {metatype_mat_id,"mat",(uint64_t)&(((animator_t *)0)->mat)},
+        {metatype_animation_dict,"animations",(uint64_t)&(((animator_t *)0)->animations)},
 };
 
 
@@ -78,7 +75,7 @@ property_entry properties_of_world_t[] = {
     } break; \
     case metatype_animator_t:\
     {\
-        DEBUG_inspect_struct_header(state, 4, properties_of_animator_t, member_ptr, member->name);\
+        DEBUG_inspect_struct_header(state, 5, properties_of_animator_t, member_ptr, member->name);\
     } break; \
     case metatype_animation:\
     {\
@@ -92,20 +89,22 @@ property_entry properties_of_world_t[] = {
     {\
         DEBUG_inspect_struct_header(state, 5, properties_of_material, member_ptr, member->name);\
     } break; \
-    case metatype_texture:\
-    {\
-        DEBUG_inspect_struct_header(state, 0, properties_of_texture, member_ptr, member->name);\
-    } break; \
 
 #define INTROSPECTION_ENUM_TYPE_HELPER\
     metatype_world_t,\
+    metatype_pworld_t,\
     metatype_camera_t,\
+    metatype_pcamera_t,\
     metatype_entity,\
+    metatype_pentity,\
     metatype_animator_t,\
+    metatype_panimator_t,\
     metatype_animation,\
+    metatype_panimation,\
     metatype_frame,\
+    metatype_pframe,\
     metatype_material,\
-    metatype_texture,\
+    metatype_pmaterial,\
 
 #define DEBUG_world_t(entity)\
     DEBUG_inspect_struct(state, 4, properties_of_world_t, entity, #entity)\
@@ -117,7 +116,7 @@ property_entry properties_of_world_t[] = {
     DEBUG_inspect_struct(state, 7, properties_of_entity, entity, #entity)\
 
 #define DEBUG_animator_t(entity)\
-    DEBUG_inspect_struct(state, 4, properties_of_animator_t, entity, #entity)\
+    DEBUG_inspect_struct(state, 5, properties_of_animator_t, entity, #entity)\
 
 #define DEBUG_animation(entity)\
     DEBUG_inspect_struct(state, 3, properties_of_animation, entity, #entity)\
@@ -127,9 +126,6 @@ property_entry properties_of_world_t[] = {
 
 #define DEBUG_material(entity)\
     DEBUG_inspect_struct(state, 5, properties_of_material, entity, #entity)\
-
-#define DEBUG_texture(entity)\
-    DEBUG_inspect_struct(state, 0, properties_of_texture, entity, #entity)\
 
 
 #define DEBUG_world_t_header(entity, title)\
@@ -142,7 +138,7 @@ property_entry properties_of_world_t[] = {
     DEBUG_inspect_struct_header(state, 7, properties_of_entity, entity, title)\
 
 #define DEBUG_animator_t_header(entity, title)\
-    DEBUG_inspect_struct_header(state, 4, properties_of_animator_t, entity, title)\
+    DEBUG_inspect_struct_header(state, 5, properties_of_animator_t, entity, title)\
 
 #define DEBUG_animation_header(entity, title)\
     DEBUG_inspect_struct_header(state, 3, properties_of_animation, entity, title)\
@@ -152,8 +148,5 @@ property_entry properties_of_world_t[] = {
 
 #define DEBUG_material_header(entity, title)\
     DEBUG_inspect_struct_header(state, 5, properties_of_material, entity, title)\
-
-#define DEBUG_texture_header(entity, title)\
-    DEBUG_inspect_struct_header(state, 0, properties_of_texture, entity, title)\
 
 

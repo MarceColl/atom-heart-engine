@@ -54,6 +54,8 @@ typedef enum token_type {
     TOKEN_CBRACKET,
     TOKEN_OBRACE,
     TOKEN_CBRACE,
+    TOKEN_SMALLERTHAN,
+    TOKEN_BIGGERTHAN,
 
     TOKEN_STRING,
     TOKEN_IDENTIFIER,
@@ -231,6 +233,8 @@ get_next_token(tokenizer *tkzr) {
     case ']': {tok.type = TOKEN_CBRACKET; tkzr->next(); } break;
     case '{': {tok.type = TOKEN_OBRACE; tkzr->next(); } break;
     case '}': {tok.type = TOKEN_CBRACE; tkzr->next(); } break;
+    case '<': {tok.type = TOKEN_SMALLERTHAN; tkzr->next(); } break;
+    case '>': {tok.type = TOKEN_BIGGERTHAN; tkzr->next(); } break;
     case '*': {tok.type = TOKEN_ASTERISK; tkzr->next(); } break;
     case '"': {
 	tkzr->next();
@@ -342,6 +346,13 @@ parse_member(tokenizer *tkzr, token member_type_tok, token struct_name_tok) {
 	{
 	    token NUM_ARRAY = get_next_token(tkzr);
 	    token LAST_BRACKET = get_next_token(tkzr);
+	} break;
+	case TOKEN_SMALLERTHAN:
+	{
+	    token tok = get_next_token(tkzr);
+	    while(tok.type != TOKEN_BIGGERTHAN) {
+		tok = get_next_token(tkzr);
+	    }
 	} break;
 	case TOKEN_SEMICOLON:
 	case TOKEN_EOF:
@@ -493,6 +504,8 @@ int main(int argc, char **argv) {
     structs = first;
     while(structs != NULL) {
 	printf("    metatype_%s,\\\n",
+	       structs->name);
+	printf("    metatype_p%s,\\\n",
 	       structs->name);
 	structs = structs->next;
     }

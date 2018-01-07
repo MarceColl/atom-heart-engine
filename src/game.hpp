@@ -7,6 +7,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <unordered_map>
 
 #include <game_platform.hpp>
 
@@ -30,10 +31,6 @@ typedef u64 flags_t;
 typedef u16 eid;
 typedef u16 mat_id;
 
-INTROSPECT()
-struct texture {
-
-};
 
 INTROSPECT()
 struct material {
@@ -57,6 +54,8 @@ struct animation {
     u32 curr_frame;
 };
 
+typedef std::unordered_map<std::string, animation*> animation_dict;
+
 INTROSPECT()
 struct animator_t {
     u32 current_frame;
@@ -64,8 +63,8 @@ struct animator_t {
     u16 y_divisions;
     mat_id mat;
     // TODO(Marce): Potser buscar alguna altre forma de guardar aixo
-    // en el futu
-//    std::unordered_map<std::string, animation*> animations;
+    // en el futur
+    animation_dict animations;
 };
 
 INTROSPECT()

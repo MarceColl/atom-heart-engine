@@ -4,7 +4,7 @@
 INCLUDE_PATH += -I./src
 INCLUDE_PATH += -I./lib
 
-CFLAGS += -fdiagnostics-color=always
+CFLAGS += -fdiagnostics-color=always -Wno-write-strings -Wall
 
 # Preprocessor
 PP_CFLAGS += -Wall
@@ -19,8 +19,6 @@ PP_CFLAGS += -fPIC
 
 # Platform dependent code
 ## SDL GAME
-SDL_CFLAGS += -Wall
-SDL_CFLAGS += -Wextra
 SDL_CFLAGS += -O2
 SDL_CFLAGS += -fPIC
 SDL_CFLAGS += -rdynamic
@@ -36,10 +34,9 @@ SDL_LDFLAGS += -ldl
 : sdl_game.cpp | lib/build/*.o |> g++ $(SDL_CFLAGS) %f lib/build/*.o -o %B $(SDL_LDFLAGS) $(INCLUDE_PATH) |> %B
 
 # Game code library
-GC_CFLAGS += -Wall
-GC_CFLAGS += -Wextra
 GC_CFLAGS += -O2
 GC_CFLAGS += -fPIC
+GC_CFLAGS += $(CFLAGS)
 
 GC_LDFLAGS += -lGL
 GC_LDFLAGS += -lglut

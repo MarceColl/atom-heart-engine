@@ -27,6 +27,7 @@ typedef struct animation_format_token {
     f32 f32val;
     s32 s32val;
     s32 text_length;
+    frame f;
     char text[50];
 } af_token;
 
@@ -37,6 +38,9 @@ struct tokenizer_t {
 	++c;
     }
 };
+
+
+af_token get_next_af_token(tokenizer_t *tkzr);
 
 bool is_end_of_line(char c) {
     bool result = ((c == '\n') ||
@@ -78,6 +82,12 @@ bool is_number(char c) {
     return result;
 }
 
+bool require_token(tokenizer_t *tkzr, token_type type) {
+    af_token tok = get_next_af_token(tkzr);
+    bool result = tok.type == type;
+    return result;
+}
+
 af_token get_next_af_token(tokenizer_t *tkzr) {
     consume_whitespace(tkzr);
 
@@ -98,6 +108,15 @@ af_token get_next_af_token(tokenizer_t *tkzr) {
     {
 	tkzr->next();
 	result.type = TOKEN_OBRACKET;
+	af_token frame_num = get_next_af_token(tkzr);
+	require_token(tkzr, TOKEN_COMMA);
+	af_token transition_time = get_next_af_token(tkzr);
+	require_token(tkzr, TOKEN_CBRACKET);
+	// TODO(Marce): Error handling
+	result.f.index = frame_num.s32val;
+	result.f.time = transition_time.f32val;
+	result.type = TOKEN_FRAME;
+	
     } break;
     case ',':
     {
@@ -132,6 +151,10 @@ af_token get_next_af_token(tokenizer_t *tkzr) {
 	    strncpy(result.text, start, counter);
 	    result.text[counter] = 0;
 	    result.text_length = counter;
+
+	    if(0 == strcmp(result.text, "dimensions")) {
+		result.type = TOKEN_DIMENSIONS;
+	    }
 	}
 	else if(is_number(tkzr->c[0])) {
 	    char *start = tkzr->c;
@@ -191,32 +214,24 @@ void load_animation_file_(game_state *state,
     while(parsing) {
 	tok = get_next_af_token(&tkzr);
 	switch(tok.type) {
-	case TOKEN_COLON: {
-	    printf("FOUND TOKEN_COLON\n");
-	} break;
-	case TOKEN_SEMICOLON: {
-	    printf("FOUND TOKEN_SEMICOLON\n");
-	} break;
-	case TOKEN_OBRACKET: {
-	    printf("FOUND TOKEN_OBRACKET\n");
-	} break;
-	case TOKEN_COMMA: {
-	    printf("FOUND TOKEN_COMMA\n");
-	} break;
-	case TOKEN_CBRACKET: {
-	    printf("FOUND TOKEN_CBRACKET\n");
-	} break;
-	case TOKEN_FLOAT: {
-	    printf("FOUND TOKEN_FLOAT %f\n", tok.f32val);
-	} break;
-	case TOKEN_INTEGER: {
-	    printf("FOUND TOKEN_INTEGER %d\n", tok.s32val);
+	case TOKEN_FRAME: {
+	    printf("FOUND TOKEN_FRAME {%d, %f}\n", tok.f.index, tok.f.time);
 	} break;
 	case TOKEN_IDENTIFIER: {
 	    printf("FOUND TOKEN_IDENTIFIER: %s\n", tok.text);
+
+	    
 	} break;
 	case TOKEN_DIMENSIONS: {
-	    printf("FOUND TOKEN_DIMENSIONS\n");
+	    af_token x_dim = get_next_af_token(&tkzr);
+	    af_token y_dim = get_next_af_token(&tkzr);
+
+	    animator->x_divisions = x_dim.s32val;
+	    animator->y_divisions = y_dim.s32val;
+
+	    printf("FOUND TOKEN_DIMENSIONS %d %d\n",
+		   animator->x_divisions,
+		   animator->y_divisions);
 	} break;
 	case TOKEN_EOF: {
 	    parsing = false;
