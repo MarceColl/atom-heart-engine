@@ -1,5 +1,5 @@
 # dimensions set the dimensions x y of the spritesheet
 dimensions 4 4
 
-WALK : {0,0.2},{1,0.2};
+WALK: {0,0.2},{1,0.2};
 IDLE: {2,0.3},{3,0.3};
