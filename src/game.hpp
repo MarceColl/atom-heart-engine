@@ -46,10 +46,18 @@ struct entity {
 };
 
 INTROSPECT()
+struct camera_t {
+    glm::mat4 view;
+    glm::mat4 projection;
+};
+
+INTROSPECT()
 struct world_t {
     entity entities[MAX_ENTITIES];
     eid num_entities;
     bool entities_dirty;
+
+    camera_t camera;
 };
 
 struct game_state {
@@ -61,10 +69,13 @@ struct game_state {
 
     platform_code *platform;
     
-    bool editor_mode;
     bool is_initialized;
     bool update_paused;
     bool stepping;
+
+    bool open_inspector;
+    bool open_entity_list;
+    bool open_material_list;
 
     GLuint vbo;
     GLuint vao;

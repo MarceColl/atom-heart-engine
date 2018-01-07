@@ -3,7 +3,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#include <glm/glm.hpp> #include <glm/gtc/matrix_transform.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <game.hpp>
 #include <imgui/imgui.h>
@@ -87,6 +88,10 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     state->update_paused = true;
     state->stepping = false;
     state->is_initialized = true;
+
+    state->open_inspector = true;
+    state->open_material_list = false;
+    state->open_entity_list = false;
     state->platform = platform;
 
     s32 width, height, nrChannels;
@@ -110,6 +115,9 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     world_t *world = &state->world;
     world->num_entities = 6;
     world->entities_dirty = true;
+    world->camera.view = glm::mat4(1);
+    world->camera.view = glm::translate(world->camera.view, glm::vec3(0.0f, 0.0f, -6.0f));
+    world->camera.projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
     srand((unsigned) time(NULL));
 
@@ -185,13 +193,32 @@ void entity_sort(entity *entities, eid num_entities) {
     qsort(entities, num_entities, sizeof(entity), entity_priority_compare);
 }
 
-extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
-    game_state *state;
-    state = (game_state*)memory->permanent_storage;
-
+void entity_list_window(game_state *state) {
     world_t *world = &state->world;
-    entity *first_entity = &world->entities[0];
+    ImGui::Begin("Entity List");
+    {
+	char title[10];
+	for(int i = 0; i < world->num_entities; i++) {
+	    sprintf(title, "%d", i);
+	    DEBUG_entity_header(&world->entities[i], title);
+	}
+    }
+    ImGui::End();
+}
 
+void material_list_window(game_state *state) {
+    ImGui::Begin("Material List");
+    {
+	char title[10];
+	for(int i = 0; i < state->num_materials; i++) {
+	    sprintf(title, "%d", i);
+	    DEBUG_material_header(&state->materials[i], title);
+	}
+    }
+    ImGui::End();
+}
+
+void main_menu_bar(game_state *state) {
     if(ImGui::BeginMainMenuBar()) {
 	if(ImGui::BeginMenu("File")) {
 	    if(ImGui::MenuItem("Exit")) {
@@ -202,15 +229,17 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 	}
 
 	if(ImGui::BeginMenu("Tools")) {
-	    if(ImGui::MenuItem("Inspector", "b")) {
-		printf("Ayy lemao\n");
-	    }
+	    ImGui::Checkbox("Inspector", &state->open_inspector);
+	    ImGui::Checkbox("Entity List", &state->open_entity_list);
+	    ImGui::Checkbox("Material List", &state->open_material_list);
 							   
 	    ImGui::EndMenu();
-	}
-
+	} 
 	if(ImGui::BeginMenu("Build")) {
-	    if(ImGui::MenuItem("Build Project", "b")) {
+	    if(ImGui::MenuItem("Build Project", "C-b")) {
+		(*state->platform->run_command)("tup");
+	    }
+	    if(ImGui::MenuItem("Reload", "C-r")) {
 		(*state->platform->run_command)("tup");
 	    }
 							   
@@ -225,6 +254,23 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 
 	ImGui::EndMainMenuBar();
     }
+}
+
+void toolbox(game_state *state) {
+    if(state->open_entity_list) {
+	entity_list_window(state);
+    }
+    if(state->open_material_list) {
+	material_list_window(state);
+    }
+}
+
+extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
+    game_state *state;
+    state = (game_state*)memory->permanent_storage;
+
+    world_t *world = &state->world;
+    entity *first_entity = &world->entities[0];
 
     DEBUG_entity(first_entity);
     DEBUG_entity(first_entity+1);
@@ -236,14 +282,8 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 					      glm::vec3(0.0f, 0.0f, 1.0f));
 	first_entity->transform = glm::translate(first_entity->transform,
 						 glm::vec3(0.1f, 0.0f, 0.0f));
-
-	state->stepping = false;
     }
 
-    glm::mat4 view;
-    view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-    glm::mat4 projection;
-    projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
     glBindVertexArray(state->vao);
     for(int i = 0; i < world->num_entities; i++) {
@@ -253,11 +293,14 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 	u32 modelLoc = glGetUniformLocation(shader_program, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(first_entity->transform));
 	u32 viewLoc = glGetUniformLocation(shader_program, "view");
-	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world->camera.view));
 	u32 projectionLoc = glGetUniformLocation(shader_program, "projection");
-	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
+	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(world->camera.projection));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world->entities[i].transform));
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }
 
+    main_menu_bar(state);
+    toolbox(state);
+    state->stepping = false;
 }

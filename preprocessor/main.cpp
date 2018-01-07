@@ -480,7 +480,7 @@ int main(int argc, char **argv) {
     while(structs != NULL) {
 	printf("    case metatype_%s:\\\n"
 	       "    {\\\n"
-	       "        DEBUG_inspect_struct(%u, properties_of_%s, member_ptr, member->name);\\\n"
+	       "        DEBUG_inspect_struct(state, %u, properties_of_%s, member_ptr, member->name);\\\n"
 	       "    } break; \\\n",
 	       structs->name,
 	       structs->num_properties,
@@ -501,7 +501,18 @@ int main(int argc, char **argv) {
     structs = first;
     while(structs != NULL) {
 	printf("#define DEBUG_%s(entity)\\\n"
-	       "    DEBUG_inspect_struct(%d, properties_of_%s, entity, #entity)\\\n\n",
+	       "    DEBUG_inspect_struct(state, %d, properties_of_%s, entity, #entity)\\\n\n",
+	       structs->name,
+	       structs->num_properties,
+	       structs->name);
+	structs = structs->next;
+    }
+    printf("\n");
+
+    structs = first;
+    while(structs != NULL) {
+	printf("#define DEBUG_%s_header(entity, title)\\\n"
+	       "    DEBUG_inspect_struct_header(state, %d, properties_of_%s, entity, title)\\\n\n",
 	       structs->name,
 	       structs->num_properties,
 	       structs->name);

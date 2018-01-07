@@ -3,13 +3,20 @@
 
 #include <imgui/imgui.h>
 
-inline void DEBUG_inspect_struct(uint32_t member_count,
+inline void DEBUG_inspect_struct(game_state *state,
+				 uint32_t member_count,
 				 property_entry *member_defs,
-				 void *struct_ptr,
-				 char *title) {
-    ImGui::Begin("Inspector"); {
-	if(ImGui::CollapsingHeader(title)) {
-	    ImGui::Indent(15.0f);
+				 void *struct_ptr, char *title);
+inline void DEBUG_inspect_struct_header(game_state *state,
+					uint32_t member_count,
+					property_entry *member_defs,
+					void *struct_ptr, char *title);
+
+inline void DEBUG_inspect_struct_inline(game_state *state,
+					u32 member_count,
+					property_entry *member_defs,
+					void *struct_ptr,
+					char *title) {
 	    for(uint32_t i = 0; i < member_count; ++i) {
 		property_entry *member = member_defs + i;
 		void *member_ptr = (((uint8_t*)struct_ptr) + member->offset);
@@ -118,10 +125,35 @@ inline void DEBUG_inspect_struct(uint32_t member_count,
 		break;
 		}
 	    }
+}
+
+inline void DEBUG_inspect_struct_header(game_state *state,
+					uint32_t member_count,
+					property_entry *member_defs,
+					void *struct_ptr, char *title) {
+	if(ImGui::CollapsingHeader(title)) {
+	    ImGui::Indent(15.0f);
+	    DEBUG_inspect_struct_inline(state,
+					member_count,
+					member_defs,
+					struct_ptr,
+					title);
 	    ImGui::Unindent(15.0f);
 	}
-	ImGui::End();
+}
+
+inline void DEBUG_inspect_struct(game_state *state,
+				 uint32_t member_count,
+				 property_entry *member_defs,
+				 void *struct_ptr, char *title) {
+    ImGui::Begin("Inspector"); {
+	DEBUG_inspect_struct_header(state,
+				    member_count,
+				    member_defs,
+				    struct_ptr,
+				    title);
     }
+    ImGui::End();
 }  
 
 #endif
