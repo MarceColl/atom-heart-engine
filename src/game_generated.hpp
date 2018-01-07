@@ -16,6 +16,19 @@ property_entry properties_of_material[] = {
 };
 
 
+property_entry properties_of_frame[] = {
+        {metatype_u32,"index",(uint64_t)&(((frame *)0)->index)},
+        {metatype_f32,"time",(uint64_t)&(((frame *)0)->time)},
+};
+
+
+property_entry properties_of_animation[] = {
+        {metatype_pframe,"frames",(uint64_t)&(((animation *)0)->frames)},
+        {metatype_u32,"num_frames",(uint64_t)&(((animation *)0)->num_frames)},
+        {metatype_u32,"curr_frame",(uint64_t)&(((animation *)0)->curr_frame)},
+};
+
+
 property_entry properties_of_animator_t[] = {
         {metatype_u32,"current_frame",(uint64_t)&(((animator_t *)0)->current_frame)},
         {metatype_u16,"x_divisions",(uint64_t)&(((animator_t *)0)->x_divisions)},
@@ -67,6 +80,14 @@ property_entry properties_of_world_t[] = {
     {\
         DEBUG_inspect_struct_header(state, 4, properties_of_animator_t, member_ptr, member->name);\
     } break; \
+    case metatype_animation:\
+    {\
+        DEBUG_inspect_struct_header(state, 3, properties_of_animation, member_ptr, member->name);\
+    } break; \
+    case metatype_frame:\
+    {\
+        DEBUG_inspect_struct_header(state, 2, properties_of_frame, member_ptr, member->name);\
+    } break; \
     case metatype_material:\
     {\
         DEBUG_inspect_struct_header(state, 5, properties_of_material, member_ptr, member->name);\
@@ -81,6 +102,8 @@ property_entry properties_of_world_t[] = {
     metatype_camera_t,\
     metatype_entity,\
     metatype_animator_t,\
+    metatype_animation,\
+    metatype_frame,\
     metatype_material,\
     metatype_texture,\
 
@@ -95,6 +118,12 @@ property_entry properties_of_world_t[] = {
 
 #define DEBUG_animator_t(entity)\
     DEBUG_inspect_struct(state, 4, properties_of_animator_t, entity, #entity)\
+
+#define DEBUG_animation(entity)\
+    DEBUG_inspect_struct(state, 3, properties_of_animation, entity, #entity)\
+
+#define DEBUG_frame(entity)\
+    DEBUG_inspect_struct(state, 2, properties_of_frame, entity, #entity)\
 
 #define DEBUG_material(entity)\
     DEBUG_inspect_struct(state, 5, properties_of_material, entity, #entity)\
@@ -114,6 +143,12 @@ property_entry properties_of_world_t[] = {
 
 #define DEBUG_animator_t_header(entity, title)\
     DEBUG_inspect_struct_header(state, 4, properties_of_animator_t, entity, title)\
+
+#define DEBUG_animation_header(entity, title)\
+    DEBUG_inspect_struct_header(state, 3, properties_of_animation, entity, title)\
+
+#define DEBUG_frame_header(entity, title)\
+    DEBUG_inspect_struct_header(state, 2, properties_of_frame, entity, title)\
 
 #define DEBUG_material_header(entity, title)\
     DEBUG_inspect_struct_header(state, 5, properties_of_material, entity, title)\

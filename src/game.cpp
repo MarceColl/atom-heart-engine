@@ -11,6 +11,7 @@
 #include <game_introspection.hpp>
 #include <debug.hpp>
 #include <image_utils.hpp>
+#include <game_animation.hpp>
 
 #define compile_shader(shader_data, shader_type) \
     compile_shader_(state, shader_data, shader_type)
@@ -215,6 +216,9 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     state->vbo = VBO;
     state->vao = VAO;
     state->ebo = EBO;
+
+    animator_t animator;
+    load_animation_file("./assets/animation/wood_box.anim", &animator);
 }
 
 s32 entity_priority_compare(const void* _e1, const void* _e2) {
@@ -320,7 +324,6 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
     DEBUG_entity(first_entity);
     DEBUG_entity(first_entity+1);
     DEBUG_material(&state->materials[0]);
-    DEBUG_camera_t(&world->camera);
 
     if(!state->update_paused || state->stepping) {
 	first_entity->animator.current_frame++;
@@ -335,10 +338,12 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
     glGenBuffers(1, &instanceVBO);
     glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
     glVertexAttribPointer(2, 16, GL_FLOAT, GL_FALSE, sizeof(entity),
-			  (void*)(&state->world.entities + OFFSET(entity, transform)))
+			  (void*)(&state->world.entities + OFFSET(entity, transform)));
+    glEnableVertexAttribArray(2);
+    glVertexAttribDivisor(2,1);
 
 
-//    glBindVertexArray(state->vao);
+    glBindVertexArray(state->vao);
     for(int i = 0; i < world->num_entities; i++) {
 	entity *e = &world->entities[i];
 	u32 shader_program = bind_material(e->mat, &e->animator);
@@ -346,11 +351,11 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 	#if 0
 	u32 modelLoc = glGetUniformLocation(shader_program, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world->entities[i].transform));
+	#endif
 	u32 viewLoc = glGetUniformLocation(shader_program, "view");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world->camera.view));
 	u32 projectionLoc = glGetUniformLocation(shader_program, "projection");
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(world->camera.projection));
-	#endif
 	    
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 50);
     }

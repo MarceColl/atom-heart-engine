@@ -14,7 +14,7 @@
 #define INTROSPECT(params)
 
 #define OFFSET(type, prop) \
-    ((u8)&(((type*)0)->prop))
+    ((u64)&(((type *)0)->prop))
 
 #define Kilobytes(value) (((uint64_t)value)*1024)
 #define Megabytes(value) (Kilobytes((uint64_t)value)*1024)
@@ -22,6 +22,7 @@
 
 #define MAX_ENTITIES 65536
 #define MAX_MATERIALS 65536
+#define MAX_ANIMATIONS 65536
 
 typedef char byte;
 
@@ -44,11 +45,27 @@ struct material {
 };
 
 INTROSPECT()
+struct frame {
+    u32 index;
+    f32 time;
+};
+
+INTROSPECT()
+struct animation {
+    frame *frames;
+    u32 num_frames;
+    u32 curr_frame;
+};
+
+INTROSPECT()
 struct animator_t {
     u32 current_frame;
     u16 x_divisions;
     u16 y_divisions;
     mat_id mat;
+    // TODO(Marce): Potser buscar alguna altre forma de guardar aixo
+    // en el futu
+//    std::unordered_map<std::string, animation*> animations;
 };
 
 INTROSPECT()

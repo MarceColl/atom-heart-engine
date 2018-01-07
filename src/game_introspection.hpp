@@ -29,6 +29,8 @@ enum meta_types {
     metatype_s16,
     metatype_s32,
     metatype_s64,
+    metatype_f32,
+    metatype_pframe,
 
     metatype_pchar, // string
     metatype_char,
