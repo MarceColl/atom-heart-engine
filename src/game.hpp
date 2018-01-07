@@ -13,6 +13,8 @@
 // Introspection macro
 #define INTROSPECT(params)
 
+#define OFFSET(type, prop) \
+    ((u8)&(((type*)0)->prop))
 
 #define Kilobytes(value) (((uint64_t)value)*1024)
 #define Megabytes(value) (Kilobytes((uint64_t)value)*1024)
@@ -28,11 +30,25 @@ typedef u16 eid;
 typedef u16 mat_id;
 
 INTROSPECT()
+struct texture {
+
+};
+
+INTROSPECT()
 struct material {
+    char *name;
     u32 shader_program;
     u32 texture;
     char *vert_filename;
     char *frag_filename;
+};
+
+INTROSPECT()
+struct animator_t {
+    u32 current_frame;
+    u16 x_divisions;
+    u16 y_divisions;
+    mat_id mat;
 };
 
 INTROSPECT()
@@ -41,6 +57,7 @@ struct entity {
     u16 priority;
     glm::vec3 position;
     glm::mat4 transform;
+    animator_t animator;
     flags_t flags;
     mat_id mat;
 };
@@ -79,6 +96,7 @@ struct game_state {
 
     GLuint vbo;
     GLuint vao;
+    u32 ebo;
 
     u32 texture;
 

@@ -3,11 +3,24 @@
 // Do not modify! File generated using the INTROSPECTION macro
 #include <game_introspection.hpp>
 
+property_entry properties_of_texture[] = {
+};
+
+
 property_entry properties_of_material[] = {
+        {metatype_pchar,"name",(uint64_t)&(((material *)0)->name)},
         {metatype_u32,"shader_program",(uint64_t)&(((material *)0)->shader_program)},
         {metatype_u32,"texture",(uint64_t)&(((material *)0)->texture)},
         {metatype_pchar,"vert_filename",(uint64_t)&(((material *)0)->vert_filename)},
         {metatype_pchar,"frag_filename",(uint64_t)&(((material *)0)->frag_filename)},
+};
+
+
+property_entry properties_of_animator_t[] = {
+        {metatype_u32,"current_frame",(uint64_t)&(((animator_t *)0)->current_frame)},
+        {metatype_u16,"x_divisions",(uint64_t)&(((animator_t *)0)->x_divisions)},
+        {metatype_u16,"y_divisions",(uint64_t)&(((animator_t *)0)->y_divisions)},
+        {metatype_mat_id,"mat",(uint64_t)&(((animator_t *)0)->mat)},
 };
 
 
@@ -16,6 +29,7 @@ property_entry properties_of_entity[] = {
         {metatype_u16,"priority",(uint64_t)&(((entity *)0)->priority)},
         {metatype_glm__vec3,"position",(uint64_t)&(((entity *)0)->position)},
         {metatype_glm__mat4,"transform",(uint64_t)&(((entity *)0)->transform)},
+        {metatype_animator_t,"animator",(uint64_t)&(((entity *)0)->animator)},
         {metatype_flags_t,"flags",(uint64_t)&(((entity *)0)->flags)},
         {metatype_mat_id,"mat",(uint64_t)&(((entity *)0)->mat)},
 };
@@ -39,26 +53,36 @@ property_entry properties_of_world_t[] = {
 #define INTROSPECTION_SWITCH_TYPE_HELPER\
     case metatype_world_t:\
     {\
-        DEBUG_inspect_struct(state, 4, properties_of_world_t, member_ptr, member->name);\
+        DEBUG_inspect_struct_header(state, 4, properties_of_world_t, member_ptr, member->name);\
     } break; \
     case metatype_camera_t:\
     {\
-        DEBUG_inspect_struct(state, 2, properties_of_camera_t, member_ptr, member->name);\
+        DEBUG_inspect_struct_header(state, 2, properties_of_camera_t, member_ptr, member->name);\
     } break; \
     case metatype_entity:\
     {\
-        DEBUG_inspect_struct(state, 6, properties_of_entity, member_ptr, member->name);\
+        DEBUG_inspect_struct_header(state, 7, properties_of_entity, member_ptr, member->name);\
+    } break; \
+    case metatype_animator_t:\
+    {\
+        DEBUG_inspect_struct_header(state, 4, properties_of_animator_t, member_ptr, member->name);\
     } break; \
     case metatype_material:\
     {\
-        DEBUG_inspect_struct(state, 4, properties_of_material, member_ptr, member->name);\
+        DEBUG_inspect_struct_header(state, 5, properties_of_material, member_ptr, member->name);\
+    } break; \
+    case metatype_texture:\
+    {\
+        DEBUG_inspect_struct_header(state, 0, properties_of_texture, member_ptr, member->name);\
     } break; \
 
 #define INTROSPECTION_ENUM_TYPE_HELPER\
     metatype_world_t,\
     metatype_camera_t,\
     metatype_entity,\
+    metatype_animator_t,\
     metatype_material,\
+    metatype_texture,\
 
 #define DEBUG_world_t(entity)\
     DEBUG_inspect_struct(state, 4, properties_of_world_t, entity, #entity)\
@@ -67,10 +91,16 @@ property_entry properties_of_world_t[] = {
     DEBUG_inspect_struct(state, 2, properties_of_camera_t, entity, #entity)\
 
 #define DEBUG_entity(entity)\
-    DEBUG_inspect_struct(state, 6, properties_of_entity, entity, #entity)\
+    DEBUG_inspect_struct(state, 7, properties_of_entity, entity, #entity)\
+
+#define DEBUG_animator_t(entity)\
+    DEBUG_inspect_struct(state, 4, properties_of_animator_t, entity, #entity)\
 
 #define DEBUG_material(entity)\
-    DEBUG_inspect_struct(state, 4, properties_of_material, entity, #entity)\
+    DEBUG_inspect_struct(state, 5, properties_of_material, entity, #entity)\
+
+#define DEBUG_texture(entity)\
+    DEBUG_inspect_struct(state, 0, properties_of_texture, entity, #entity)\
 
 
 #define DEBUG_world_t_header(entity, title)\
@@ -80,9 +110,15 @@ property_entry properties_of_world_t[] = {
     DEBUG_inspect_struct_header(state, 2, properties_of_camera_t, entity, title)\
 
 #define DEBUG_entity_header(entity, title)\
-    DEBUG_inspect_struct_header(state, 6, properties_of_entity, entity, title)\
+    DEBUG_inspect_struct_header(state, 7, properties_of_entity, entity, title)\
+
+#define DEBUG_animator_t_header(entity, title)\
+    DEBUG_inspect_struct_header(state, 4, properties_of_animator_t, entity, title)\
 
 #define DEBUG_material_header(entity, title)\
-    DEBUG_inspect_struct_header(state, 4, properties_of_material, entity, title)\
+    DEBUG_inspect_struct_header(state, 5, properties_of_material, entity, title)\
+
+#define DEBUG_texture_header(entity, title)\
+    DEBUG_inspect_struct_header(state, 0, properties_of_texture, entity, title)\
 
 

@@ -480,7 +480,7 @@ int main(int argc, char **argv) {
     while(structs != NULL) {
 	printf("    case metatype_%s:\\\n"
 	       "    {\\\n"
-	       "        DEBUG_inspect_struct(state, %u, properties_of_%s, member_ptr, member->name);\\\n"
+	       "        DEBUG_inspect_struct_header(state, %u, properties_of_%s, member_ptr, member->name);\\\n"
 	       "    } break; \\\n",
 	       structs->name,
 	       structs->num_properties,

@@ -40,9 +40,12 @@ mat_id assign_mat_id_(game_state *state) {
     return new_id;
 }
 
-#define create_material(texture, vert_filename, frag_filename) \
-    create_material_(state, texture, vert_filename, frag_filename)
-mat_id create_material_(game_state *state, u32 texture, char *vert_filename, char *frag_filename) {
+#define create_material(texture, vert_filename, frag_filename, name)		\
+    create_material_(state, texture, vert_filename, frag_filename, name)
+mat_id create_material_(game_state *state, u32 texture,
+			char *vert_filename,
+			char *frag_filename,
+			char *name = NULL) {
     char *vert_data = state->platform->read_file(vert_filename);
     u32 vertex_shader = compile_shader(vert_data, GL_VERTEX_SHADER);
     free(vert_data);
@@ -52,6 +55,7 @@ mat_id create_material_(game_state *state, u32 texture, char *vert_filename, cha
     free(frag_data);
 
     material mat;
+    mat.texture = texture;
     mat.shader_program = glCreateProgram();
     glAttachShader(mat.shader_program, vertex_shader);
     glAttachShader(mat.shader_program, fragment_shader);
@@ -64,16 +68,55 @@ mat_id create_material_(game_state *state, u32 texture, char *vert_filename, cha
 
     mat.vert_filename = (char*)malloc(strlen(vert_filename));
     mat.frag_filename = (char*)malloc(strlen(frag_filename));
-    mat.texture = texture;
     strcpy(mat.vert_filename, vert_filename);
     strcpy(mat.frag_filename, frag_filename);
+
+    if(name != NULL) {
+	mat.name = (char*)malloc(strlen(name));
+	strcpy(mat.name, name);
+    }
+    else {
+	int index = 0;
+	char *c = vert_filename;
+	// TODO
+	mat.name = (char*)malloc(index);
+	strncpy(mat.name, vert_filename, index-1);
+	mat.name[index] = 0;
+    }
     state->materials[new_id] = mat;
     return new_id;
 }
 
-#define bind_material(mat) bind_material_(state, mat);
-u32 bind_material_(game_state *state, mat_id mat) {
+#define bind_material(mat, animator) bind_material_(state, mat, animator);
+u32 bind_material_(game_state *state, mat_id mat, animator_t *animator) {
     material *m = &state->materials[mat];
+
+#if 0
+    u16 xd = animator->x_divisions;
+    u16 yd = animator->y_divisions;
+    u32 x_cf = animator->current_frame%xd;
+    u32 y_cf = animator->current_frame/xd;
+    float x_size = 1.0f/(float)xd;
+    float y_size = 1.0f/(float)yd;
+
+    float vertices[] = {
+	(x_cf)*x_size-1, (y_cf)*y_size-1,
+	(x_cf)*x_size-1, (y_cf)*y_size,
+	(x_cf)*x_size, (y_cf)*y_size,
+	(x_cf)*x_size, (y_cf)*y_size -1 
+    }; 
+
+    u32 indices[] = {
+	0, 1, 3,
+	1, 2, 3
+    };
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, state->ebo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    
+    glBufferSubData(GL_ARRAY_BUFFER, 3*sizeof(float), 2*sizeof(float), &vertices);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3*sizeof(float)));
+#endif
     
     glUseProgram(m->shader_program);
     glBindTexture(GL_TEXTURE_2D, m->texture);
@@ -113,42 +156,36 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     stbi_image_free(data);
 
     world_t *world = &state->world;
-    world->num_entities = 6;
+    world->num_entities = 1;
     world->entities_dirty = true;
     world->camera.view = glm::mat4(1);
-    world->camera.view = glm::translate(world->camera.view, glm::vec3(0.0f, 0.0f, -6.0f));
+    world->camera.view = glm::translate(world->camera.view, glm::vec3(0.0f, 0.0f, -20.0f));
     world->camera.projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
     srand((unsigned) time(NULL));
 
 
-    mat_id test_mat = create_material(texture_2d,
+    mat_id basic = create_material(texture_2d,
 				      "./shaders/basic.vert",
-				      "./shaders/basic.frag");
-
-    for(int i = 0; i < world->num_entities; ++i) {
-	world->entities[i].mat = test_mat;
-	world->entities[i].transform = glm::mat4(1);
-	world->entities[i].transform = glm::scale(world->entities[i].transform,
-						  glm::vec3(0.2f, 0.2f, 0.2f));
-	world->entities[i].transform = glm::translate(world->entities[i].transform,
-						      glm::vec3(10.f*(float)rand()/RAND_MAX-5.f,
-								10.f*(float)rand()/RAND_MAX-5.f,
-								10.f*(float)rand()/RAND_MAX-5.f));
-    }
+				      "./shaders/basic.frag",
+				      "basic");
 
     entity *first_entity = &world->entities[0];
     first_entity->id = 2;
+    first_entity->mat = basic;
     first_entity->flags = 0;
+    first_entity->animator.current_frame = 1;
+    first_entity->animator.x_divisions = 4;
+    first_entity->animator.y_divisions = 4;
     first_entity->transform = glm::mat4(1);
     first_entity->transform = glm::scale(first_entity->transform,
 					 glm::vec3(0.5f, 0.5f, 0.5f));
 
     float vertices[] = {
-	0.5f, 0.5f, 0.0f, 0.5f, 0.5f,
-	0.5f, -0.5f, 0.0f, 0.5f, 0.0f,
-	-0.5f, -0.5f, 0.0f, 0.0f, 0.0f,
-	-0.5f, 0.5f, 0.0f, 0.0f, 0.5f
+	0.5f, 0.5f, 0.0f, 1.0f, 1.0f,
+	0.5f, -0.5f, 0.0f, 1.0f, 0.75f,
+	-0.5f, -0.5f, 0.0f, 0.75f, 0.75f,
+	-0.5f, 0.5f, 0.0f, 0.75f, 1.0f
     }; 
 
     u32 indices[] = {
@@ -177,6 +214,7 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
 
     state->vbo = VBO;
     state->vao = VAO;
+    state->ebo = EBO;
 }
 
 s32 entity_priority_compare(const void* _e1, const void* _e2) {
@@ -209,10 +247,14 @@ void entity_list_window(game_state *state) {
 void material_list_window(game_state *state) {
     ImGui::Begin("Material List");
     {
+	static ImGuiTextFilter filter;
+	filter.Draw();
+
 	char title[10];
 	for(int i = 0; i < state->num_materials; i++) {
-	    sprintf(title, "%d", i);
-	    DEBUG_material_header(&state->materials[i], title);
+	    if(filter.PassFilter(state->materials[i].name)) {
+		DEBUG_material_header(&state->materials[i], state->materials[i].name);
+	    }
 	}
     }
     ImGui::End();
@@ -272,11 +314,16 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
     world_t *world = &state->world;
     entity *first_entity = &world->entities[0];
 
+    main_menu_bar(state);
+    toolbox(state);
+
     DEBUG_entity(first_entity);
     DEBUG_entity(first_entity+1);
     DEBUG_material(&state->materials[0]);
+    DEBUG_camera_t(&world->camera);
 
     if(!state->update_paused || state->stepping) {
+	first_entity->animator.current_frame++;
 	first_entity->transform = glm::rotate(first_entity->transform,
 					      glm::radians(5.0f),
 					      glm::vec3(0.0f, 0.0f, 1.0f));
@@ -284,23 +331,29 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 						 glm::vec3(0.1f, 0.0f, 0.0f));
     }
 
+    u32 instanceVBO;
+    glGenBuffers(1, &instanceVBO);
+    glBindBuffer(GL_ARRAY_BUFFER, instanceVBO);
+    glVertexAttribPointer(2, 16, GL_FLOAT, GL_FALSE, sizeof(entity),
+			  (void*)(&state->world.entities + OFFSET(entity, transform)))
 
-    glBindVertexArray(state->vao);
+
+//    glBindVertexArray(state->vao);
     for(int i = 0; i < world->num_entities; i++) {
 	entity *e = &world->entities[i];
-	u32 shader_program = bind_material(e->mat);
+	u32 shader_program = bind_material(e->mat, &e->animator);
 
+	#if 0
 	u32 modelLoc = glGetUniformLocation(shader_program, "model");
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(first_entity->transform));
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world->entities[i].transform));
 	u32 viewLoc = glGetUniformLocation(shader_program, "view");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world->camera.view));
 	u32 projectionLoc = glGetUniformLocation(shader_program, "projection");
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(world->camera.projection));
-	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world->entities[i].transform));
-	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	#endif
+	    
+	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 50);
     }
 
-    main_menu_bar(state);
-    toolbox(state);
     state->stepping = false;
 }
