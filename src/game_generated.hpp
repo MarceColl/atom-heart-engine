@@ -30,6 +30,7 @@ property_entry properties_of_animator_t[] = {
         {metatype_u16,"x_divisions",(uint64_t)&(((animator_t *)0)->x_divisions)},
         {metatype_u16,"y_divisions",(uint64_t)&(((animator_t *)0)->y_divisions)},
         {metatype_mat_id,"mat",(uint64_t)&(((animator_t *)0)->mat)},
+        {metatype_panimation,"current_animation",(uint64_t)&(((animator_t *)0)->current_animation)},
         {metatype_animation_dict,"animations",(uint64_t)&(((animator_t *)0)->animations)},
 };
 
@@ -75,7 +76,7 @@ property_entry properties_of_world_t[] = {
     } break; \
     case metatype_animator_t:\
     {\
-        DEBUG_inspect_struct_header(state, 5, properties_of_animator_t, member_ptr, member->name);\
+        DEBUG_inspect_struct_header(state, 6, properties_of_animator_t, member_ptr, member->name);\
     } break; \
     case metatype_animation:\
     {\
@@ -116,7 +117,7 @@ property_entry properties_of_world_t[] = {
     DEBUG_inspect_struct(state, 7, properties_of_entity, entity, #entity)\
 
 #define DEBUG_animator_t(entity)\
-    DEBUG_inspect_struct(state, 5, properties_of_animator_t, entity, #entity)\
+    DEBUG_inspect_struct(state, 6, properties_of_animator_t, entity, #entity)\
 
 #define DEBUG_animation(entity)\
     DEBUG_inspect_struct(state, 3, properties_of_animation, entity, #entity)\
@@ -138,7 +139,7 @@ property_entry properties_of_world_t[] = {
     DEBUG_inspect_struct_header(state, 7, properties_of_entity, entity, title)\
 
 #define DEBUG_animator_t_header(entity, title)\
-    DEBUG_inspect_struct_header(state, 5, properties_of_animator_t, entity, title)\
+    DEBUG_inspect_struct_header(state, 6, properties_of_animator_t, entity, title)\
 
 #define DEBUG_animation_header(entity, title)\
     DEBUG_inspect_struct_header(state, 3, properties_of_animation, entity, title)\

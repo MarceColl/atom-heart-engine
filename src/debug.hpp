@@ -88,6 +88,10 @@ inline void DEBUG_inspect_struct_inline(game_state *state,
 		{
 		    ImGui::Text("%s: %u", member->name, *(flags_t*)member_ptr);
 		} break;
+		case metatype_animation_dict:
+		{
+		    ImGui::Text("%s: %f", member->name, (*(animation_dict*)member_ptr)["WALK"]->frames[0].time);
+		} break;
 		case metatype_glm__mat4:
 		{
 		    glm::mat4 *mat = (glm::mat4*)member_ptr;

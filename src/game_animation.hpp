@@ -192,6 +192,14 @@ af_token get_next_af_token(tokenizer_t *tkzr) {
     return result;
 }
 
+#define request_animation_id() \
+    request_animation_id_(state)
+anim_id request_animation_id_(game_state *state) {
+    anim_id result = state->num_animations;
+    ++state->num_animations;
+    return result;
+}
+
 #define load_animation_file(filename, animator) \
     load_animation_file_(state, filename, animator)
 void load_animation_file_(game_state *state,
@@ -209,18 +217,38 @@ void load_animation_file_(game_state *state,
     tokenizer_t tkzr;
     af_token tok;
     bool parsing = true;
+    u32 frame_counter = 0;
+    frame frames[MAX_FRAMES];
+    std::string curr_animation;
+
     tkzr.c = file_contents;
+    // NOTE(Marce): Sometimes unordered_map crashes if we don't reserve beforehand
+    animator->animations.reserve(1);
 
     while(parsing) {
 	tok = get_next_af_token(&tkzr);
 	switch(tok.type) {
 	case TOKEN_FRAME: {
 	    printf("FOUND TOKEN_FRAME {%d, %f}\n", tok.f.index, tok.f.time);
+	    frames[frame_counter].index = tok.f.index;
+	    frames[frame_counter].time = tok.f.time;
+	    frame_counter++;
 	} break;
 	case TOKEN_IDENTIFIER: {
 	    printf("FOUND TOKEN_IDENTIFIER: %s\n", tok.text);
-
-	    
+	    if(frame_counter > 0) {
+		anim_id aid = request_animation_id();
+		// TODO(Marce): Get rid of malloc
+		state->animations[aid].frames = (frame*)malloc(sizeof(frame)*frame_counter);
+		memcpy(state->animations[aid].frames, frames, sizeof(frame)*frame_counter);
+		state->animations[aid].num_frames = frame_counter;
+		state->animations[aid].curr_frame = 0;
+		printf("%s: %d\n", curr_animation.c_str(), frame_counter);
+		frame_counter = 0;
+		printf("%x\n", animator);
+		animator->animations.emplace(curr_animation, &state->animations[aid]);
+	    }
+	    curr_animation = tok.text;
 	} break;
 	case TOKEN_DIMENSIONS: {
 	    af_token x_dim = get_next_af_token(&tkzr);
@@ -234,6 +262,17 @@ void load_animation_file_(game_state *state,
 		   animator->y_divisions);
 	} break;
 	case TOKEN_EOF: {
+	    if(frame_counter > 0) {
+		anim_id aid = request_animation_id();
+		// TODO(Marce): Get rid of malloc
+		state->animations[aid].frames = (frame*)malloc(sizeof(frame)*frame_counter);
+		memcpy(state->animations[aid].frames, frames, sizeof(frame)*frame_counter);
+		state->animations[aid].num_frames = frame_counter;
+		state->animations[aid].curr_frame = 0;
+		printf("%s: %d\n", curr_animation.c_str(), frame_counter);
+		frame_counter = 0;
+		animator->animations.emplace(curr_animation, &state->animations[aid]);
+	    }
 	    parsing = false;
 	} break;
 	default:

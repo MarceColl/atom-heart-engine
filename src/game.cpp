@@ -217,8 +217,7 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     state->vao = VAO;
     state->ebo = EBO;
 
-    animator_t animator;
-    load_animation_file("./assets/animation/wood_box.anim", &animator);
+    load_animation_file("./assets/animation/wood_box.anim", &first_entity->animator);
 }
 
 s32 entity_priority_compare(const void* _e1, const void* _e2) {

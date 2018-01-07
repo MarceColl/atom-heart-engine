@@ -24,12 +24,14 @@
 #define MAX_ENTITIES 65536
 #define MAX_MATERIALS 65536
 #define MAX_ANIMATIONS 65536
+#define MAX_FRAMES 65536
 
 typedef char byte;
 
 typedef u64 flags_t;
 typedef u16 eid;
 typedef u16 mat_id;
+typedef u16 anim_id;
 
 
 INTROSPECT()
@@ -62,6 +64,7 @@ struct animator_t {
     u16 x_divisions;
     u16 y_divisions;
     mat_id mat;
+    animation *current_animation;
     // TODO(Marce): Potser buscar alguna altre forma de guardar aixo
     // en el futur
     animation_dict animations;
@@ -99,6 +102,9 @@ struct game_state {
 
     material materials[MAX_MATERIALS];
     mat_id num_materials;
+
+    animation animations[MAX_ANIMATIONS];
+    u16 num_animations;
 
     platform_code *platform;
     
