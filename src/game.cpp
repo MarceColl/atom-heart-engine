@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <time.h>
 
@@ -60,18 +61,24 @@ mat_id create_material_(game_state *state, u32 texture, char *vert_filename, cha
 
     mat_id new_id = assign_mat_id();
 
+    mat.vert_filename = (char*)malloc(strlen(vert_filename));
+    mat.frag_filename = (char*)malloc(strlen(frag_filename));
+    mat.texture = texture;
+    strcpy(mat.vert_filename, vert_filename);
+    strcpy(mat.frag_filename, frag_filename);
     state->materials[new_id] = mat;
     return new_id;
 }
 
 #define bind_material(mat) bind_material_(state, mat);
-void bind_material_(game_state *state, mat_id mat) {
+u32 bind_material_(game_state *state, mat_id mat) {
     material *m = &state->materials[mat];
     
-    glBindTexture(GL_TEXTURE_2D, m->texture);
     glUseProgram(m->shader_program);
-}
+    glBindTexture(GL_TEXTURE_2D, m->texture);
 
+    return m->shader_program;
+}
 
 extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     game_state *state;
@@ -221,6 +228,7 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 
     DEBUG_entity(first_entity);
     DEBUG_entity(first_entity+1);
+    DEBUG_material(&state->materials[0]);
 
     if(!state->update_paused || state->stepping) {
 	first_entity->transform = glm::rotate(first_entity->transform,
@@ -237,17 +245,17 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
     glm::mat4 projection;
     projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
-    u32 modelLoc = glGetUniformLocation(state->shader_program, "model");
-    glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(first_entity->transform));
-    u32 viewLoc = glGetUniformLocation(state->shader_program, "view");
-    glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
-    u32 projectionLoc = glGetUniformLocation(state->shader_program, "projection");
-    glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
-
     glBindVertexArray(state->vao);
     for(int i = 0; i < world->num_entities; i++) {
 	entity *e = &world->entities[i];
-	bind_material(e->mat);
+	u32 shader_program = bind_material(e->mat);
+
+	u32 modelLoc = glGetUniformLocation(shader_program, "model");
+	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(first_entity->transform));
+	u32 viewLoc = glGetUniformLocation(shader_program, "view");
+	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
+	u32 projectionLoc = glGetUniformLocation(shader_program, "projection");
+	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world->entities[i].transform));
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     }

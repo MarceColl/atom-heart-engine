@@ -234,7 +234,6 @@ int main() {
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
     while(!done) {
 	// NOTE(Marce): inotify will tell us when the library
 	// has changed, and then we can reload the library.
@@ -255,12 +254,14 @@ int main() {
 	}
 	ImGui_ImplSdlGL3_NewFrame(window);
 
+	glClearColor(clear_color.x, clear_color.y, clear_color.z, clear_color.w);
 	glClear(GL_COLOR_BUFFER_BIT);
 	ImGui::SetNextWindowSize(ImVec2(815, 650));
 	ImGui::Begin("Game", NULL, ImGuiWindowFlags_NoResize); {
 	    ImVec2 window_size = ImGui::GetWindowSize();
 
 	    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	    glClearColor(1.0f, 0.0f, 1.0f, 1.0f);
 	    glClear(GL_COLOR_BUFFER_BIT);
 	    glViewport(0,0,800,600);
 	    (*code.game_update_and_render)(&memory, 1.f);

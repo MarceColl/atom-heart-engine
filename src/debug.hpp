@@ -15,43 +15,51 @@ inline void DEBUG_inspect_struct(uint32_t member_count,
 		void *member_ptr = (((uint8_t*)struct_ptr) + member->offset);
 
 		char label_input[100];
-		sprintf(label_input, "%s##%h", member->name, (uint8_t*)struct_ptr);
+		sprintf(label_input, "%s", member->name, (uint8_t*)struct_ptr);
 		switch(member->type) {
 		case metatype_float:
 		{
 		    ImGui::InputFloat(label_input, (float*)member_ptr, 0.001f, 1.0f);
 		} break;
+		case metatype_u8:
 		case metatype_uint8_t:
 		{
-		    ImGui::Text("%s: d",label_input, (u32)*(uint8_t*)member_ptr);
+		    ImGui::Text("%s: %d", label_input, (u32)*(uint8_t*)member_ptr);
 		} break;
+		case metatype_u16:
 		case metatype_uint16_t:
 		{
-		    ImGui::Text("%s: d",label_input, (u32)*(uint16_t*)member_ptr);
+		    ImGui::Text("%s: %d", label_input, (u32)*(uint16_t*)member_ptr);
 		} break;
+		case metatype_u32:
 		case metatype_uint32_t:
 		{
-		    ImGui::Text("%s: d",label_input, (u32)*(uint32_t*)member_ptr);
+		    ImGui::Text("%s: %d",label_input, (u32)*(uint32_t*)member_ptr);
 		} break;
+		case metatype_u64:
 		case metatype_uint64_t:
 		{
-		    ImGui::Text("%s: d",label_input, (u32)*(uint64_t*)member_ptr);
+		    ImGui::Text("%s: %d",label_input, (u32)*(uint64_t*)member_ptr);
 		} break;
+		case metatype_s8:
 		case metatype_int8_t:
 		{
-		    ImGui::Text("%s: d",label_input, (s32)*(int8_t*)member_ptr);
+		    ImGui::Text("%s: %d",label_input, (s32)*(int8_t*)member_ptr);
 		} break;
+		case metatype_s16:
 		case metatype_int16_t:
 		{
-		    ImGui::Text("%s: d",label_input, (s32)*(int16_t*)member_ptr);
+		    ImGui::Text("%s: %d",label_input, (s32)*(int16_t*)member_ptr);
 		} break;
+		case metatype_s32:
 		case metatype_int32_t:
 		{
-		    ImGui::Text("%s: d",label_input, (int32_t*)member_ptr);
+		    ImGui::Text("%s: %d",label_input, (int32_t*)member_ptr);
 		} break;
+		case metatype_s64:
 		case metatype_int64_t:
 		{
-		    ImGui::Text("%s: d",label_input, (s32)*(int64_t*)member_ptr);
+		    ImGui::Text("%s: %d",label_input, (s32)*(int64_t*)member_ptr);
 		} break;
 		case metatype_char:
 		{
