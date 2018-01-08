@@ -162,16 +162,7 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     setup_memory_space(memory, state);
 
     char *str1 = allocate_string(&state->sa_alloc, 20);
-    char *str2 = allocate_string(&state->sa_alloc, 20);
-    char *str3 = allocate_string(&state->sa_alloc, 20);
-
-    strcpy(str1, "hola que tal?\0");
-    strcpy(str2, "jo be i tu?\0");
-    printf("%s\n", str1);
-    printf("%s\n", str2);
-
-    free_string(&state->sa_alloc, str2);
-    free_string(&state->sa_alloc, str1);
+    printf("%x %x\n", state->sa_alloc.first_available_space, str1);
 
     s32 width, height, nrChannels;
     u8 *data = stbi_load("assets/container.jpg", &width, &height, &nrChannels, 0);

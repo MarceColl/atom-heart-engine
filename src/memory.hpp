@@ -43,6 +43,7 @@ struct string_allocator {
 typedef struct string_allocator_header {
     u64 size_available;
     char *next_space;
+    char *prev_space;
     u32 magic;
 } sa_header;
 
@@ -58,6 +59,9 @@ void initialize_string_allocator(string_allocator *sa,
     init_header->magic = MAGIC_HEADER;
     init_header->size_available = size;
     init_header->next_space = NULL;
+    init_header->prev_space = NULL;
+
+    fprintf(stderr, "String allocator initialized\n");
 }
 
 static inline
@@ -73,51 +77,70 @@ u64 align_to(u64 alignment, u64 address) {
 }
 
 inline
+char* string_allocator_get_fitting_space(string_allocator * sa,
+			u64 size) {
+    sa_header *it_headers = (sa_header*)sa->first_available_space;
+
+    while(it_headers->size_available < size) {
+	it_headers = (sa_header*)it_headers->next_space;
+	    
+	// There is no space for this string
+	if(it_headers == NULL) return NULL;
+    } 
+
+    return (char*)it_headers;
+}
+
+inline
 char* allocate_string(string_allocator *sa,
 		      u64 size) {
-    char *result = sa->first_available_space;
-    sa_header *header = (sa_header*)result;
-    while((header->magic == MAGIC_HEADER) &&
-	  (header->size_available < size)) {
-	result = header->next_space;
-	header = (sa_header*)result;
-    }
-
-    if(header->magic != MAGIC_HEADER) {
-	fprintf(stderr, "we dun fucked\n");
-    }
-
-    // we want to align the memory to the alignment of the header
+    // NOTE(Marce): we want to align the memory to the alignment of the header
     // for faster access, even if we will lose a bit of memory each time
-    size = align_to(alignof(sa_header), size);
-    sa->used += size;
+    // we have a u32 before the string to store the size of the string
+    u64 alloc_size = align_to(alignof(sa_header),
+			      size + sizeof(u32));
+    sa->used += alloc_size;
 
-    if(header->next_space ==  NULL) {
-	sa->first_available_space = result + size;
-	sa_header* next_header = (sa_header*)sa->first_available_space;
-	next_header->size_available = header->size_available - size;
-	next_header->next_space = NULL;
-	next_header->magic = MAGIC_HEADER;
-	fprintf(stderr, "next space null\n");
-    }
-    else {
-	// first_available_space is always on the header of the lowest memory address 
-	// TODO 
-	sa->first_available_space = result + size;
-	sa_header* next_header = (sa_header*)sa->first_available_space;
-	next_header->size_available = header->size_available - size;
-	next_header->next_space = NULL;
-	next_header->magic = MAGIC_HEADER;
+    char *mem = string_allocator_get_fitting_space(sa, alloc_size);
+    if(mem == NULL) {
+	return NULL;
     }
 
-    memset(result, size, 0);
+    char *result = mem + sizeof(u32);
+    *((u32*)mem) = size;
+    sa_header *header = (sa_header*)mem;
+    sa_header *next_header;
+
+    if(header->next_space == NULL) {
+	// NOTE(Marce): Happens when we append to the end of the header chain
+	next_header = (sa_header*)(mem + alloc_size);
+	printf("diff: %u\n", (u64)next_header - (u64)header);
+	next_header->next_space = NULL;
+	next_header->prev_space = header->prev_space;
+	next_header->size_available = header->size_available - alloc_size - sizeof(u32);
+	next_header->magic = MAGIC_HEADER;
+	sa->first_available_space = (char*)next_header;
+    } else {
+	if(header->prev_space == NULL) {
+	    // NOTE(Marce): when it's the first node available, the first
+	    // node availble should be the next from this one
+	    sa->first_available_space = header->next_space;
+	}
+	else {
+	    // NOTE(Marce): when it's in the middle of the chain
+	    ((sa_header*)(header->prev_space))->next_space = header->next_space;
+	    ((sa_header*)(header->next_space))->prev_space = header->prev_space;
+	}
+    }
+
+    memset(result, 0, size);
 
     return result;
 }
 
 inline
 void merge_headers(string_allocator *sa, sa_header *header) {
-    sa_header *next_header = (sa_header*)((u64)header + header->size_available);
+    sa_header *next_header = (sa_header*)((u64)header + header->size_available + sizeof(u32));
     printf("next: %x\n", next_header);
     if(next_header->magic == MAGIC_HEADER) {
 	printf("MERGE!\n");
@@ -126,20 +149,18 @@ void merge_headers(string_allocator *sa, sa_header *header) {
 
 inline
 void free_string(string_allocator *sa, char *str) {
-    char *c = str;
-    while(*c != '\0') {
-	++c;
-    }
+    char *real_address = str - sizeof(u32);
+    u32 size = *(u32*)real_address;
 
-    sa_header *header = (sa_header*)str;
+    printf("size: %u\n", size);
 
-    u64 size = (u64)c - (u64)str;
-    size = align_to(alignof(sa_header), size);
+    sa_header *header = (sa_header*)real_address;
     header->size_available = size;
     header->next_space = sa->first_available_space;
+    header->prev_space = NULL;
     header->magic = MAGIC_HEADER;
 
-    printf("header: %x\n", header);
+    printf("header: %u %x\n", header->size_available, header);
 
     sa->first_available_space = (char*)header;
 
