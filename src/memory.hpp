@@ -59,6 +59,12 @@ void initialize_string_allocator(string_allocator *sa,
     init_header->next_space = NULL;
 }
 
+static inline
+u64 align_to(u64 alignment, u64 address) {
+    u64 rem = address % alignment;
+    return address + (alignment - rem);
+}
+
 inline
 char* allocate_string(string_allocator *sa,
 		      u64 size) {
@@ -74,7 +80,11 @@ char* allocate_string(string_allocator *sa,
 	fprintf(stderr, "we dun fucked\n");
     }
 
+    // we want to align the memory to the alignment of the header
+    // for faster access, even if we will lose a bit of memory each time
+    size = align_to(alignof(sa_header), size);
     sa->used += size;
+
     if(header->next_space ==  NULL) {
 	sa->first_available_space = result + size;
 	sa_header* next_header = (sa_header*)sa->first_available_space;
@@ -85,6 +95,7 @@ char* allocate_string(string_allocator *sa,
     }
     else {
 	// first_available_space is always on the header of the lowest memory space
+	// TODO 
 	sa->first_available_space = result + size;
 	sa_header* next_header = (sa_header*)sa->first_available_space;
 	next_header->size_available = header->size_available - size;
@@ -108,9 +119,11 @@ void free_string(string_allocator *sa, char *str) {
     header->next_space = sa->first_available_space;
     header->magic = MAGIC_HEADER;
 
+    sa->first_available_space = (char*)header;
+
     // Check if there is a block after this so we can
     // merge them
-    if((u8*)header->next_space == ((u8*)header + size + 1)) {
+    if((u8*)header->next_space == ((u8*)header + size)) {
 	printf("merge\n");
     }
 }
