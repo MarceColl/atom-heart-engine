@@ -174,7 +174,7 @@ void allocate_game_memory(game_memory *memory) {
 	memory->permanent_storage_space +
 	memory->transient_storage_space;
 	
-    byte* mem_addr = (byte*)malloc(total_memory);
+    byte* mem_addr = (byte*)aligned_alloc(128, total_memory);
     if(mem_addr == NULL) {
 	perror("Couldn't allocate memory for the game");
 	exit(1);

@@ -98,7 +98,8 @@ struct world_t {
 
 struct game_state {
     world_t world;
-    memory_arena world_arena;
+
+    string_allocator sa_alloc;
 
     material materials[MAX_MATERIALS];
     mat_id num_materials;

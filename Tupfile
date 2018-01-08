@@ -4,12 +4,12 @@
 INCLUDE_PATH += -I./src
 INCLUDE_PATH += -I./lib
 
-CFLAGS += -fdiagnostics-color=always -Wno-write-strings -Wall
+CFLAGS += -fdiagnostics-color=always -Wno-write-strings -Wall -g
+CFLAGS += -fsanitize=undefined -fsanitize=address -fsanitize=leak
 
 # Preprocessor
 PP_CFLAGS += -Wall
 PP_CFLAGS += -Wextra
-PP_CFLAGS += -O2
 PP_CFLAGS += -fPIC
 
 : foreach preprocessor/*.cpp |> g++ $(PP_CFLAGS) %f -o ah_pp |> ah_pp
@@ -19,7 +19,6 @@ PP_CFLAGS += -fPIC
 
 # Platform dependent code
 ## SDL GAME
-SDL_CFLAGS += -O2
 SDL_CFLAGS += -fPIC
 SDL_CFLAGS += -rdynamic
 SDL_CFLAGS += $(CFLAGS)
@@ -34,7 +33,6 @@ SDL_LDFLAGS += -ldl
 : sdl_game.cpp | lib/build/*.o |> g++ $(SDL_CFLAGS) %f lib/build/*.o -o %B $(SDL_LDFLAGS) $(INCLUDE_PATH) |> %B
 
 # Game code library
-GC_CFLAGS += -O2
 GC_CFLAGS += -fPIC
 GC_CFLAGS += $(CFLAGS)
 

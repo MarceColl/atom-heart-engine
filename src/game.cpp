@@ -61,28 +61,29 @@ mat_id create_material_(game_state *state, u32 texture,
     glAttachShader(mat.shader_program, vertex_shader);
     glAttachShader(mat.shader_program, fragment_shader);
     glLinkProgram(mat.shader_program);
-
+    
     glDeleteShader(vertex_shader);
     glDeleteShader(fragment_shader);
 
     mat_id new_id = assign_mat_id();
 
-    mat.vert_filename = (char*)malloc(strlen(vert_filename));
-    mat.frag_filename = (char*)malloc(strlen(frag_filename));
+    mat.vert_filename = (char*)malloc(strlen(vert_filename)+1);
+    mat.frag_filename = (char*)malloc(strlen(frag_filename)+1);
     strcpy(mat.vert_filename, vert_filename);
     strcpy(mat.frag_filename, frag_filename);
 
     if(name != NULL) {
-	mat.name = (char*)malloc(strlen(name));
+	mat.name = (char*)malloc(strlen(name)+1);
 	strcpy(mat.name, name);
+	mat.name[strlen(name)] = 0;
     }
     else {
 	int index = 0;
 	char *c = vert_filename;
 	// TODO
-	mat.name = (char*)malloc(index);
-	strncpy(mat.name, vert_filename, index-1);
-	mat.name[index] = 0;
+	// mat.name = (char*)malloc(index);
+	// strncpy(mat.name, vert_filename, index-1);
+	// mat.name[index] = 0;
     }
     state->materials[new_id] = mat;
     return new_id;
@@ -125,6 +126,26 @@ u32 bind_material_(game_state *state, mat_id mat, animator_t *animator) {
     return m->shader_program;
 }
 
+#define SETUP_MEMORY_SECTION(ptr, mem_type, section_size, allocator_type, initialize) \
+    {									\
+	u64 size = section_size;					\
+	initialize(ptr,size,(void*)((u8*)memory->mem_type + offset));	\
+	offset += section_size;						\
+    }
+
+#define TRANSIENT transient_storage
+#define PERMANENT permanent_storage
+    
+void setup_memory_space(game_memory *memory, game_state *state) {
+    u64 offset = 0;
+
+    SETUP_MEMORY_SECTION(&state->sa_alloc,
+			 transient_storage,
+			 Megabytes(200),
+			 string_allocator,
+			 initialize_string_allocator);
+}
+
 extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     game_state *state;
     state = (game_state*)memory->permanent_storage;
@@ -137,6 +158,16 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     state->open_material_list = false;
     state->open_entity_list = false;
     state->platform = platform;
+
+    setup_memory_space(memory, state);
+
+    char *str1 = allocate_string(&state->sa_alloc, 20);
+    char *str2 = allocate_string(&state->sa_alloc, 20);
+    char *str3 = allocate_string(&state->sa_alloc, 20);
+
+    free_string(&state->sa_alloc, str2);
+    free_string(&state->sa_alloc, str1);
+
 
     s32 width, height, nrChannels;
     u8 *data = stbi_load("assets/container.jpg", &width, &height, &nrChannels, 0);
@@ -344,19 +375,19 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 
     glBindVertexArray(state->vao);
     for(int i = 0; i < world->num_entities; i++) {
+	#if 0
 	entity *e = &world->entities[i];
 	u32 shader_program = bind_material(e->mat, &e->animator);
 
-	#if 0
 	u32 modelLoc = glGetUniformLocation(shader_program, "model");
 	glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(world->entities[i].transform));
-	#endif
 	u32 viewLoc = glGetUniformLocation(shader_program, "view");
 	glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(world->camera.view));
 	u32 projectionLoc = glGetUniformLocation(shader_program, "projection");
 	glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(world->camera.projection));
 	    
 	glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 50);
+	#endif
     }
 
     state->stepping = false;
