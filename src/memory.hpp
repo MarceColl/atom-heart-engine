@@ -139,6 +139,7 @@ char* allocate_string(string_allocator *sa,
 
 inline
 void merge_headers(string_allocator *sa, sa_header *header) {
+    // TODO(Marce): Merge contiguous headers to avoid fragmenting
     sa_header *next_header = (sa_header*)((u64)header + header->size_available + sizeof(u32));
     if(next_header->magic == MAGIC_HEADER) {
 	printf("MERGE!\n");
