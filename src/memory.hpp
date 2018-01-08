@@ -2,6 +2,7 @@
 #define _MEMORY__H_
 
 #include <stdio.h>
+#include <string.h>
 
 #include <game_math.hpp>
 
@@ -62,7 +63,13 @@ void initialize_string_allocator(string_allocator *sa,
 static inline
 u64 align_to(u64 alignment, u64 address) {
     u64 rem = address % alignment;
-    return address + (alignment - rem);
+    u64 diff = (alignment - rem);
+
+    if(rem != 0) {
+	address += diff;
+    }
+
+    return address;
 }
 
 inline
@@ -94,7 +101,7 @@ char* allocate_string(string_allocator *sa,
 	fprintf(stderr, "next space null\n");
     }
     else {
-	// first_available_space is always on the header of the lowest memory space
+	// first_available_space is always on the header of the lowest memory address 
 	// TODO 
 	sa->first_available_space = result + size;
 	sa_header* next_header = (sa_header*)sa->first_available_space;
@@ -103,7 +110,18 @@ char* allocate_string(string_allocator *sa,
 	next_header->magic = MAGIC_HEADER;
     }
 
+    memset(result, size, 0);
+
     return result;
+}
+
+inline
+void merge_headers(string_allocator *sa, sa_header *header) {
+    sa_header *next_header = (sa_header*)((u64)header + header->size_available);
+    printf("next: %x\n", next_header);
+    if(next_header->magic == MAGIC_HEADER) {
+	printf("MERGE!\n");
+    }
 }
 
 inline
@@ -113,19 +131,19 @@ void free_string(string_allocator *sa, char *str) {
 	++c;
     }
 
+    sa_header *header = (sa_header*)str;
+
     u64 size = (u64)c - (u64)str;
-    sa_header* header = (sa_header*)str;
+    size = align_to(alignof(sa_header), size);
     header->size_available = size;
     header->next_space = sa->first_available_space;
     header->magic = MAGIC_HEADER;
 
+    printf("header: %x\n", header);
+
     sa->first_available_space = (char*)header;
 
-    // Check if there is a block after this so we can
-    // merge them
-    if((u8*)header->next_space == ((u8*)header + size)) {
-	printf("merge\n");
-    }
+    merge_headers(sa, header);
 }
 
 #endif

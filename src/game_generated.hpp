@@ -60,8 +60,19 @@ property_entry properties_of_world_t[] = {
 };
 
 
+property_entry properties_of_string_allocator[] = {
+        {metatype_u64,"size",(uint64_t)&(((string_allocator *)0)->size)},
+        {metatype_u64,"used",(uint64_t)&(((string_allocator *)0)->used)},
+        {metatype_pchar,"first_available_space",(uint64_t)&(((string_allocator *)0)->first_available_space)},
+};
+
+
 #endif
 #define INTROSPECTION_SWITCH_TYPE_HELPER\
+    case metatype_string_allocator:\
+    {\
+        DEBUG_inspect_struct_header(state, 3, properties_of_string_allocator, member_ptr, member->name);\
+    } break; \
     case metatype_world_t:\
     {\
         DEBUG_inspect_struct_header(state, 4, properties_of_world_t, member_ptr, member->name);\
@@ -92,6 +103,8 @@ property_entry properties_of_world_t[] = {
     } break; \
 
 #define INTROSPECTION_ENUM_TYPE_HELPER\
+    metatype_string_allocator,\
+    metatype_pstring_allocator,\
     metatype_world_t,\
     metatype_pworld_t,\
     metatype_camera_t,\
@@ -106,6 +119,9 @@ property_entry properties_of_world_t[] = {
     metatype_pframe,\
     metatype_material,\
     metatype_pmaterial,\
+
+#define DEBUG_string_allocator(entity)\
+    DEBUG_inspect_struct(state, 3, properties_of_string_allocator, entity, #entity)\
 
 #define DEBUG_world_t(entity)\
     DEBUG_inspect_struct(state, 4, properties_of_world_t, entity, #entity)\
@@ -128,6 +144,9 @@ property_entry properties_of_world_t[] = {
 #define DEBUG_material(entity)\
     DEBUG_inspect_struct(state, 5, properties_of_material, entity, #entity)\
 
+
+#define DEBUG_string_allocator_header(entity, title)\
+    DEBUG_inspect_struct_header(state, 3, properties_of_string_allocator, entity, title)\
 
 #define DEBUG_world_t_header(entity, title)\
     DEBUG_inspect_struct_header(state, 4, properties_of_world_t, entity, title)\

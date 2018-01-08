@@ -165,8 +165,8 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     char *str2 = allocate_string(&state->sa_alloc, 20);
     char *str3 = allocate_string(&state->sa_alloc, 20);
 
-    strcpy(str1, "hola que tal?");
-    strcpy(str2, "jo be i tu?");
+    strcpy(str1, "hola que tal?\0");
+    strcpy(str2, "jo be i tu?\0");
     printf("%s\n", str1);
     printf("%s\n", str2);
 
