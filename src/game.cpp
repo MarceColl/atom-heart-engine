@@ -67,23 +67,20 @@ mat_id create_material_(game_state *state, u32 texture,
 
     mat_id new_id = assign_mat_id();
 
-    mat.vert_filename = (char*)malloc(strlen(vert_filename)+1);
-    mat.frag_filename = (char*)malloc(strlen(frag_filename)+1);
+    mat.vert_filename = allocate_string(&state->sa_alloc, strlen(vert_filename)+1);
+    mat.frag_filename = allocate_string(&state->sa_alloc, strlen(frag_filename)+1);
     strcpy(mat.vert_filename, vert_filename);
     strcpy(mat.frag_filename, frag_filename);
 
     if(name != NULL) {
-	mat.name = (char*)malloc(strlen(name)+1);
+	mat.name = allocate_string(&state->sa_alloc, strlen(name)+1);
 	strcpy(mat.name, name);
 	mat.name[strlen(name)] = 0;
     }
     else {
-	int index = 0;
-	char *c = vert_filename;
-	// TODO
-	// mat.name = (char*)malloc(index);
-	// strncpy(mat.name, vert_filename, index-1);
-	// mat.name[index] = 0;
+	// int index = 0;
+	// char *c = vert_filename;
+	// TODO(Marce): Get shader name from shader filename
     }
     state->materials[new_id] = mat;
     return new_id;
@@ -160,9 +157,6 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     state->platform = platform;
 
     setup_memory_space(memory, state);
-
-    char *str1 = allocate_string(&state->sa_alloc, 20);
-    printf("%x %x\n", state->sa_alloc.first_available_space, str1);
 
     s32 width, height, nrChannels;
     u8 *data = stbi_load("assets/container.jpg", &width, &height, &nrChannels, 0);
@@ -279,7 +273,6 @@ void material_list_window(game_state *state) {
 	static ImGuiTextFilter filter;
 	filter.Draw();
 
-	char title[10];
 	for(int i = 0; i < state->num_materials; i++) {
 	    if(filter.PassFilter(state->materials[i].name)) {
 		DEBUG_material_header(&state->materials[i], state->materials[i].name);

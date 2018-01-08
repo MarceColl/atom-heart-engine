@@ -114,7 +114,6 @@ char* allocate_string(string_allocator *sa,
     if(header->next_space == NULL) {
 	// NOTE(Marce): Happens when we append to the end of the header chain
 	next_header = (sa_header*)(mem + alloc_size);
-	printf("diff: %u\n", (u64)next_header - (u64)header);
 	next_header->next_space = NULL;
 	next_header->prev_space = header->prev_space;
 	next_header->size_available = header->size_available - alloc_size - sizeof(u32);
@@ -141,7 +140,6 @@ char* allocate_string(string_allocator *sa,
 inline
 void merge_headers(string_allocator *sa, sa_header *header) {
     sa_header *next_header = (sa_header*)((u64)header + header->size_available + sizeof(u32));
-    printf("next: %x\n", next_header);
     if(next_header->magic == MAGIC_HEADER) {
 	printf("MERGE!\n");
     }
@@ -152,15 +150,11 @@ void free_string(string_allocator *sa, char *str) {
     char *real_address = str - sizeof(u32);
     u32 size = *(u32*)real_address;
 
-    printf("size: %u\n", size);
-
     sa_header *header = (sa_header*)real_address;
     header->size_available = size;
     header->next_space = sa->first_available_space;
     header->prev_space = NULL;
     header->magic = MAGIC_HEADER;
-
-    printf("header: %u %x\n", header->size_available, header);
 
     sa->first_available_space = (char*)header;
 
