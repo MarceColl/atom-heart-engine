@@ -94,18 +94,9 @@ af_token get_next_af_token(tokenizer_t *tkzr) {
     af_token result;
     result.type = TOKEN_UNKNOWN;
     switch(tkzr->c[0]) {
-    case ':':
-    {
-	tkzr->next();
-	result.type = TOKEN_COLON;
-    } break;
-    case ';':
-    {
-	tkzr->next();
-	result.type = TOKEN_SEMICOLON;
-    } break;
-    case '{':
-    {
+    case ':': {result.type = TOKEN_COLON; tkzr->next();} break;
+    case ';': {tkzr->next(); result.type = TOKEN_SEMICOLON;} break;
+    case '{': {
 	tkzr->next();
 	result.type = TOKEN_OBRACKET;
 	af_token frame_num = get_next_af_token(tkzr);
@@ -118,23 +109,12 @@ af_token get_next_af_token(tokenizer_t *tkzr) {
 	result.type = TOKEN_FRAME;
 	
     } break;
-    case ',':
-    {
-	tkzr->next();
-	result.type = TOKEN_COMMA;
-    } break;
-    case '}':
-    {
-	tkzr->next();
-	result.type = TOKEN_CBRACKET;
-    } break;
-    case '\0':
-    {
-	tkzr->next();
-	result.type = TOKEN_EOF;
-    } break;
+    case ',': {tkzr->next(); result.type = TOKEN_COMMA;} break;
+    case '}': {tkzr->next(); result.type = TOKEN_CBRACKET;} break;
+    case '\0': {tkzr->next(); result.type = TOKEN_EOF;} break;
     default:
     {
+	// Either an identifier, a number or some crap
 	if(is_alpha(tkzr->c[0])) {
 	    char *start = tkzr->c;
 	    tkzr->next();
