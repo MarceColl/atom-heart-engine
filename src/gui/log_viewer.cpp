@@ -1,9 +1,12 @@
+#ifndef _LOG_VIEWER__H_
+#define _LOG_VIEWER__H_
+
 #include <string.h>
 #include <imgui/imgui.h>
 
 #include <gui/log_viewer.hpp>
 
-
+inline
 void draw_log_viewer(log_allocator* la, const char* title) {
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin(title, NULL);
@@ -15,6 +18,7 @@ void draw_log_viewer(log_allocator* la, const char* title) {
     static bool show_notice = true;
     static bool show_warning = true;
     static bool show_error = true;
+    static u32 num = 0;
     ImGui::TextUnformatted("Log entry types: ");
     ImGui::SameLine();
     ImGui::Checkbox("Debug", &show_debug);
@@ -28,6 +32,7 @@ void draw_log_viewer(log_allocator* la, const char* title) {
 
     LOG_TYPE type;
     char *nextlog = NULL;
+    u32 count = 0;
     do {
 	nextlog = next_log_(la, nextlog, &log_msg, &type);
 
@@ -63,8 +68,15 @@ void draw_log_viewer(log_allocator* la, const char* title) {
 
 	    ImGui::SameLine();
 	    ImGui::TextUnformatted(log_msg);
-	    ImGui::SetScrollHere(1.0f);
+
+	    ++count;
 	}
     } while(nextlog != NULL);
+    if(count > num) {
+	num = count;
+	ImGui::SetScrollHere(1.0f);
+    }
     ImGui::End();
 }
+
+#endif
