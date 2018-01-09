@@ -12,6 +12,9 @@
 #include <debug.hpp>
 #include <image_utils.hpp>
 #include <game_animation.hpp>
+#include <gui/log_viewer.hpp>
+#include <memory.h>
+
 
 #define compile_shader(shader_data, shader_type) \
     compile_shader_(state, shader_data, shader_type)
@@ -123,7 +126,7 @@ u32 bind_material_(game_state *state, mat_id mat, animator_t *animator) {
     return m->shader_program;
 }
 
-#define SETUP_MEMORY_SECTION(ptr, mem_type, section_size, allocator_type, initialize) \
+#define SETUP_MEMORY_SECTION(ptr, mem_type, section_size, initialize) \
     {									\
 	u64 size = section_size;					\
 	initialize(ptr,size,(void*)((u8*)memory->mem_type + offset));	\
@@ -139,8 +142,11 @@ void setup_memory_space(game_memory *memory, game_state *state) {
     SETUP_MEMORY_SECTION(&state->sa_alloc,
 			 transient_storage,
 			 Megabytes(200),
-			 string_allocator,
 			 initialize_string_allocator);
+    SETUP_MEMORY_SECTION(&state->la_alloc,
+			 transient_storage,
+			 Megabytes(200),
+			 initialize_log_allocator);
 }
 
 extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
@@ -159,6 +165,7 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     setup_memory_space(memory, state);
 
     s32 width, height, nrChannels;
+    // override stbi's allocators with string_allocator's
     u8 *data = stbi_load("assets/container.jpg", &width, &height, &nrChannels, 0);
 
     u32 texture_2d;
@@ -170,7 +177,6 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
 
     state->texture = texture_2d;
 
@@ -184,7 +190,6 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     world->camera.projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
 
     srand((unsigned) time(NULL));
-
 
     mat_id basic = create_material(texture_2d,
 				      "./shaders/basic.vert",
@@ -214,7 +219,6 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
 	1, 2, 3
     };
 
-
     u32 VBO, VAO, EBO;
     glGenVertexArrays(1, &VAO);
     glGenBuffers(1, &VBO);
@@ -238,6 +242,8 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     state->ebo = EBO;
 
     load_animation_file("./assets/animation/wood_box.anim", &first_entity->animator);
+
+    log_notice("Game state initialized");
 }
 
 s32 entity_priority_compare(const void* _e1, const void* _e2) {
@@ -350,6 +356,7 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
 					      glm::vec3(0.0f, 0.0f, 1.0f));
 	first_entity->transform = glm::translate(first_entity->transform,
 						 glm::vec3(0.1f, 0.0f, 0.0f));
+	log_notice("STEP");
     }
 
     u32 instanceVBO;
@@ -360,7 +367,8 @@ extern "C" GAME_UPDATE_AND_RENDER_FUNC(game_update_and_render) {
     glEnableVertexAttribArray(2);
     glVertexAttribDivisor(2,1);
 
-
+    draw_log_viewer(&state->la_alloc, "Log");
+    
     glBindVertexArray(state->vao);
     for(int i = 0; i < world->num_entities; i++) {
 	#if 0

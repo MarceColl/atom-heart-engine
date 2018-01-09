@@ -100,6 +100,8 @@ struct game_state {
     world_t world;
 
     string_allocator sa_alloc;
+    log_allocator la_alloc;
+    memory_stack memstack;
 
     material materials[MAX_MATERIALS];
     mat_id num_materials;

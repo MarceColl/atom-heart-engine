@@ -21,7 +21,6 @@ struct WindowProperties {
     std::string title;
 };
 
-
 char* read_file_to_mem_and_null_terminate(char *filename) {
     char *result = 0;
     FILE *file = fopen(filename, "r");
@@ -168,7 +167,7 @@ void allocate_game_memory(game_memory *memory) {
     // our own memory properly and we avoid the cost of all
     // allocations except this one.
     memory->permanent_storage_space = Megabytes(64);
-    memory->transient_storage_space = Megabytes(128);
+    memory->transient_storage_space = Gigabytes(2);
 
     uint64_t total_memory =
 	memory->permanent_storage_space +

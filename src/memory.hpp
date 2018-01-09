@@ -18,6 +18,52 @@ struct game_memory {
 
 void set_game_memory_ptr(game_memory *memory);
 
+// LOG_ALLOCATOR
+struct log_allocator {
+    char *base;
+    char *curr;
+    u64 size;
+};
+
+inline
+void initialize_log_allocator(log_allocator *la,
+			      u64 size,
+			      void *storage) {
+    la->base = (char*)storage;
+    la->curr = (char*)storage;
+    la->size = size;
+}
+
+enum LOG_TYPE : char {
+    DEBUG,
+    NOTICE,
+    WARNING,
+    ERROR
+};
+
+#define log_debug(explanation) \
+    push_log(&state->la_alloc, DEBUG, "()", explanation)
+#define log_notice(explanation) \
+    push_log(&state->la_alloc, NOTICE, "()", explanation)
+#define log_warning(explanation) \
+    push_log(&state->la_alloc, WARNING, "()", explanation)
+#define log_error(explanation) \
+    push_log(&state->la_alloc, ERROR, "()", explanation)
+
+#define push_log(la, type, from, explanation)				\
+    push_log_(la, type, from ": " explanation,		\
+	      sizeof(from ": " explanation));
+inline
+void push_log_(log_allocator *la, LOG_TYPE type, char *str, size_t size_str) {
+    *la->curr = (char)type;
+    la->curr += 1;
+    la->size += 1;
+    strncpy(la->curr, str, size_str);
+    la->curr += size_str;
+    la->size += size_str;
+}
+
+// MEMORY STACK
 struct memory_stack {
     u64 size;
     u8 *base;
@@ -28,10 +74,12 @@ void initialize_stack(memory_stack *arena,
 		      u64 size,
 		      u8 *storage);
 
-void *push_struct(memory_stack *arena,
-		  u64 size,
-		  void *data);
+#define push_struct(stack, type) (type*)push_struct_(stack, sizeof(type))
+void *push_struct_(memory_stack *arena,
+		   u64 size,
+		   void *data);
 
+// STRING ALLOCATOR
 struct string_allocator {
     u64 size;
     u64 used;
@@ -161,5 +209,6 @@ void free_string(string_allocator *sa, char *str) {
 
     merge_headers(sa, header);
 }
+
 
 #endif

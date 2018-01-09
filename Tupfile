@@ -40,5 +40,6 @@ GC_LDFLAGS += -lGL
 GC_LDFLAGS += -lglut
 
 : foreach src/*.cpp | src/game_generated.hpp src/*.hpp |> g++ -c $(GC_CFLAGS) $(CFLAGS) $(INCLUDE_PATH) %f -o %o |> build/%B.o
+: foreach src/gui/*.cpp | src/game_generated.hpp src/*.hpp |> g++ -c $(GC_CFLAGS) $(CFLAGS) $(INCLUDE_PATH) %f -o %o |> build/%B.o
 : build/*.o |> g++ %f $(GC_CFLAGS) $(CFLAGS) -shared -o lib/libgamecode.so $(GC_LDFLAGS) |> lib/libgamecode.so
 
