@@ -16,9 +16,9 @@
 #include <memory.h>
 
 
-#define compile_shader(shader_data, shader_type) \
-    compile_shader_(state, shader_data, shader_type)
-u32 compile_shader_(game_state *state, char *shader_data, GLenum shader_type) {
+#define compile_shader(shader_data, shader_type, filename)	\
+    compile_shader_(state, shader_data, shader_type, filename)
+u32 compile_shader_(game_state *state, char *shader_data, GLenum shader_type, char *filename) {
     u32 shader_id;
     s32 success;
     GLchar infoLog[1024];
@@ -29,9 +29,8 @@ u32 compile_shader_(game_state *state, char *shader_data, GLenum shader_type) {
 
     glGetShaderiv(shader_id, GL_COMPILE_STATUS, &success);
     if(!success) {
-	printf("yeah...\n");
 	glGetShaderInfoLog(shader_id, 1024, NULL, infoLog);
-	printf("%s\n", infoLog);
+	log_error("Error compiling shader (%s):\n %s", filename, infoLog);
     }
 
     return shader_id;
@@ -51,11 +50,11 @@ mat_id create_material_(game_state *state, u32 texture,
 			char *frag_filename,
 			char *name = NULL) {
     char *vert_data = state->platform->read_file(vert_filename);
-    u32 vertex_shader = compile_shader(vert_data, GL_VERTEX_SHADER);
+    u32 vertex_shader = compile_shader(vert_data, GL_VERTEX_SHADER, vert_filename);
     free(vert_data);
 
     char *frag_data = state->platform->read_file(frag_filename);
-    u32 fragment_shader = compile_shader(frag_data, GL_FRAGMENT_SHADER);
+    u32 fragment_shader = compile_shader(frag_data, GL_FRAGMENT_SHADER, frag_filename);
     free(frag_data);
 
     material mat;
@@ -86,6 +85,15 @@ mat_id create_material_(game_state *state, u32 texture,
 	// TODO(Marce): Get shader name from shader filename
     }
     state->materials[new_id] = mat;
+    log_notice("Loaded material %s\n"
+	       "        vert: %s\n"
+	       "        frag: %s\n"
+	       "        text: %u\n",
+	       name,
+	       mat.vert_filename,
+	       mat.frag_filename,
+	       texture);
+
     return new_id;
 }
 
@@ -129,16 +137,17 @@ u32 bind_material_(game_state *state, mat_id mat, animator_t *animator) {
 #define SETUP_MEMORY_SECTION(ptr, mem_type, section_size, initialize) \
     {									\
 	u64 size = section_size;					\
-	initialize(ptr,size,(void*)((u8*)memory->mem_type + offset));	\
-	offset += section_size;						\
-	log_notice(#ptr " " #section_size);				\
+	initialize(ptr,size,(void*)((u8*)memory->mem_type + offset_transient));	\
+	offset_transient += section_size;				\
+	log_notice(#ptr " " #section_size " at " #mem_type);		\
     }
 
 #define TRANSIENT transient_storage
 #define PERMANENT permanent_storage
     
 void setup_memory_space(game_memory *memory, game_state *state) {
-    u64 offset = 0;
+    u64 offset_transient = 0;
+    u64 offset_permanent = 0;
 
     // Log allocator first so we can log the memory space
     // initializaton
@@ -166,16 +175,17 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     state->open_entity_list = false;
     state->platform = platform;
 
+    // We can log starting from here, we initialize the log allocator
+    // here
     setup_memory_space(memory, state);
 
     s32 width, height, nrChannels;
-    // override stbi's allocators with string_allocator's
+    // TODO(Marce): override stbi's allocators with string_allocator's
     u8 *data = stbi_load("assets/container.jpg", &width, &height, &nrChannels, 0);
 
     u32 texture_2d;
     glGenTextures(1, &texture_2d);
     glBindTexture(GL_TEXTURE_2D, texture_2d);
-    printf("%u\n", texture_2d);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -192,8 +202,6 @@ extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {
     world->camera.view = glm::mat4(1);
     world->camera.view = glm::translate(world->camera.view, glm::vec3(0.0f, 0.0f, -20.0f));
     world->camera.projection = glm::perspective(glm::radians(45.0f), 800.0f/600.0f, 0.1f, 100.0f);
-
-    srand((unsigned) time(NULL));
 
     mat_id basic = create_material(texture_2d,
 				      "./shaders/basic.vert",

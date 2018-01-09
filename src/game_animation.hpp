@@ -209,9 +209,8 @@ void load_animation_file_(game_state *state,
     // animator
     char *file_contents = state->platform->read_file(filename);
     if(!file_contents) {
-	fprintf(stderr,
-		"Couldn't open file %s\n",
-		filename);
+	log_error("Couldn't open animation file %s\n",
+		  filename);
     }
 
     tokenizer_t tkzr;
@@ -229,13 +228,11 @@ void load_animation_file_(game_state *state,
 	tok = get_next_af_token(&tkzr);
 	switch(tok.type) {
 	case TOKEN_FRAME: {
-	    printf("FOUND TOKEN_FRAME {%d, %f}\n", tok.f.index, tok.f.time);
 	    frames[frame_counter].index = tok.f.index;
 	    frames[frame_counter].time = tok.f.time;
 	    frame_counter++;
 	} break;
 	case TOKEN_IDENTIFIER: {
-	    printf("FOUND TOKEN_IDENTIFIER: %s\n", tok.text);
 	    curr_animation = tok.text;
 	} break;
 	case TOKEN_DIMENSIONS: {
@@ -245,9 +242,6 @@ void load_animation_file_(game_state *state,
 	    animator->x_divisions = x_dim.s32val;
 	    animator->y_divisions = y_dim.s32val;
 
-	    printf("FOUND TOKEN_DIMENSIONS %d %d\n",
-		   animator->x_divisions,
-		   animator->y_divisions);
 	} break;
 	case TOKEN_SEMICOLON: {
 	    anim_id aid = request_animation_id();
@@ -256,17 +250,21 @@ void load_animation_file_(game_state *state,
 	    memcpy(state->animations[aid].frames, frames, sizeof(frame)*frame_counter);
 	    state->animations[aid].num_frames = frame_counter;
 	    state->animations[aid].curr_frame = 0;
-	    printf("%s: %d\n", curr_animation.c_str(), frame_counter);
 	    frame_counter = 0;
 	    animator->animations.emplace(curr_animation, &state->animations[aid]);
 	}break;
 	case TOKEN_EOF: {
 	    parsing = false;
 	} break;
-	default:
-	    break;
+	case TOKEN_UNKNOWN: {
+	    log_warning("Unknown token in %s", filename);
+	} break;
+	default: {
+	} break;
 	}
     }
+
+    log_notice("Loaded animation from %s", filename);
 
     free(file_contents);
 }

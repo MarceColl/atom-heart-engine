@@ -37,6 +37,7 @@ void draw_log_viewer(log_allocator* la, const char* title) {
 
 	ImGui::SameLine();
 	ImGui::TextUnformatted(log_msg);
+	ImGui::SetScrollHere(1.0f);
      } while(nextlog != NULL);
      ImGui::End();
 }

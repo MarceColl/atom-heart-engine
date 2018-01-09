@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdarg.h>
 
 #include <game_math.hpp>
 
@@ -47,26 +48,32 @@ enum LOG_TYPE : char {
     ERROR
 };
 
-#define log_debug(explanation) \
-    push_log(&state->la_alloc, DEBUG, "()", explanation)
-#define log_notice(explanation) \
-    push_log(&state->la_alloc, NOTICE, "()", explanation)
-#define log_warning(explanation) \
-    push_log(&state->la_alloc, WARNING, "()", explanation)
-#define log_error(explanation) \
-    push_log(&state->la_alloc, ERROR, "()", explanation)
 
-#define push_log(la, type, from, explanation)				\
-    push_log_(la, type, from ": " explanation,		\
-	      sizeof(from ": " explanation));
+#define push_log(la, type, from, explanation, ...)			\
+    push_log_(la, type, from ": " explanation,				\
+	      sizeof(from ": " explanation), ##__VA_ARGS__);
+
+#define log_debug(explanation,...)					\
+    push_log(&state->la_alloc, DEBUG, "()", explanation, ##__VA_ARGS__)
+#define log_notice(explanation,...)					\
+    push_log(&state->la_alloc, NOTICE, "()", explanation, ##__VA_ARGS__)
+#define log_warning(explanation,...)					\
+    push_log(&state->la_alloc, WARNING, "()", explanation, ##__VA_ARGS__)
+#define log_error(explanation,...)					\
+    push_log(&state->la_alloc, ERROR, "()", explanation, ##__VA_ARGS__)
+
 inline
-void push_log_(log_allocator *la, LOG_TYPE type, char *str, size_t size_str) {
+void push_log_(log_allocator *la, LOG_TYPE type, char *str, size_t size_str, ...) {
     *la->curr = (char)type;
     la->curr += sizeof(char);
     la->used += sizeof(char);
-    strncpy(la->curr, str, size_str);
-    la->curr += size_str;
-    la->used += size_str;
+
+    va_list args;
+    va_start(args, size_str);
+    size_str = vsprintf(la->curr, str, args);
+    la->curr[size_str] = 0;
+    la->curr += size_str + 1;
+    la->used += size_str + 1;
 }
 
 inline
@@ -135,8 +142,6 @@ void initialize_string_allocator(string_allocator *sa,
     init_header->size_available = size;
     init_header->next_space = NULL;
     init_header->prev_space = NULL;
-
-    fprintf(stderr, "String allocator initialized\n");
 }
 
 static inline
