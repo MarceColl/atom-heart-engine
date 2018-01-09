@@ -7,10 +7,13 @@
 void draw_log_viewer(log_allocator* la, const char* title) {
     ImGui::SetNextWindowSize(ImVec2(500, 400), ImGuiCond_FirstUseEver);
     ImGui::Begin(title, NULL);
-    char *p_line = la->base;
-    while((u64)p_line < (u64)la->curr) {
+    char *log_msg;
+    LOG_TYPE type;
+    char *nextlog = NULL;
+     do {
+	nextlog = next_log_(la, nextlog, &log_msg, &type);
+
 	ImGui::TextUnformatted("["); ImGui::SameLine();
-	LOG_TYPE type = *(LOG_TYPE*)p_line;
 	switch(type) {
 	case DEBUG: {
 	    ImGui::PushStyleColor(0, (ImVec4)ImColor(255,255,255));
@@ -31,12 +34,9 @@ void draw_log_viewer(log_allocator* la, const char* title) {
 	}
 	ImGui::PopStyleColor();
 	ImGui::TextUnformatted("]");
-	++p_line;
 
 	ImGui::SameLine();
-	ImGui::TextUnformatted(p_line);
-	// NOTE(Marce): Need to include the null char
-	p_line += strlen(p_line) + 1;
-    }
-    ImGui::End();
+	ImGui::TextUnformatted(log_msg);
+     } while(nextlog != NULL);
+     ImGui::End();
 }

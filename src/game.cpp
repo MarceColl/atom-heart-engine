@@ -131,6 +131,7 @@ u32 bind_material_(game_state *state, mat_id mat, animator_t *animator) {
 	u64 size = section_size;					\
 	initialize(ptr,size,(void*)((u8*)memory->mem_type + offset));	\
 	offset += section_size;						\
+	log_notice(#ptr " " #section_size);				\
     }
 
 #define TRANSIENT transient_storage
@@ -139,14 +140,17 @@ u32 bind_material_(game_state *state, mat_id mat, animator_t *animator) {
 void setup_memory_space(game_memory *memory, game_state *state) {
     u64 offset = 0;
 
-    SETUP_MEMORY_SECTION(&state->sa_alloc,
-			 transient_storage,
-			 Megabytes(200),
-			 initialize_string_allocator);
+    // Log allocator first so we can log the memory space
+    // initializaton
     SETUP_MEMORY_SECTION(&state->la_alloc,
 			 transient_storage,
 			 Megabytes(200),
 			 initialize_log_allocator);
+    SETUP_MEMORY_SECTION(&state->sa_alloc,
+			 transient_storage,
+			 Megabytes(200),
+			 initialize_string_allocator);
+    log_notice("Memory space set up");
 }
 
 extern "C" INITIALIZE_GAME_STATE_FUNC(initialize_game_state) {

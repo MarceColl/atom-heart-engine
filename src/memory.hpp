@@ -18,10 +18,14 @@ struct game_memory {
 
 void set_game_memory_ptr(game_memory *memory);
 
-// LOG_ALLOCATOR
+///////////////////
+// LOG_ALLOCATOR //
+///////////////////
 struct log_allocator {
     char *base;
+    char *first;
     char *curr;
+    u64 used;
     u64 size;
 };
 
@@ -31,7 +35,9 @@ void initialize_log_allocator(log_allocator *la,
 			      void *storage) {
     la->base = (char*)storage;
     la->curr = (char*)storage;
+    la->first = (char*)storage;
     la->size = size;
+    la->used = 0;
 }
 
 enum LOG_TYPE : char {
@@ -56,14 +62,35 @@ enum LOG_TYPE : char {
 inline
 void push_log_(log_allocator *la, LOG_TYPE type, char *str, size_t size_str) {
     *la->curr = (char)type;
-    la->curr += 1;
-    la->size += 1;
+    la->curr += sizeof(char);
+    la->used += sizeof(char);
     strncpy(la->curr, str, size_str);
     la->curr += size_str;
-    la->size += size_str;
+    la->used += size_str;
 }
 
-// MEMORY STACK
+inline
+char* next_log_(log_allocator *la, char *curr_log, char **log_msg, LOG_TYPE *type) {
+    // TODO(Marce): Find the type, then the log string of the log
+    // after curr_log, return the next log addr. if curr_log == NULL
+    // start from the beginning.
+    if(curr_log == NULL) {
+	curr_log = la->base;
+    }
+    
+    *type = *(LOG_TYPE*)curr_log;
+    *log_msg = curr_log + 1;
+
+    char *result = curr_log + 2 + strlen(*log_msg);
+    if((u64)result >= (u64)(la->base + la->used)) {
+	return NULL;
+    }
+    return result;
+}
+
+//////////////////
+// MEMORY STACK //
+//////////////////
 struct memory_stack {
     u64 size;
     u8 *base;
